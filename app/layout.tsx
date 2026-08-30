@@ -11,6 +11,7 @@ import "./product-grid.css";
 import "./compact-ui.css";
 import "./black-ui.css";
 import "./final-polish.css";
+import "./navbar-lock.css";
 
 export const metadata: Metadata = {
   title: { default: "TradeUP", template: "%s · TradeUP" },
