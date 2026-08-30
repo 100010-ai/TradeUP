@@ -25,10 +25,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className={`appRoot ${flowMode ? "flowMode" : ""}`}>
       {!flowMode && <header className="appHeader">
-        <Link href="/" className="brandLockup" aria-label="TradeUP"><span className="brandWord">Trade</span><span className="brandUp">UP</span></Link>
+        <Link prefetch={false} href="/" className="brandLockup" aria-label="TradeUP"><span className="brandWord">Trade</span><span className="brandUp">UP</span></Link>
         <div className="headerActions">
-          {session.profile ? <Link href="/profile" className="balanceButton"><strong>{rubles(session.profile.balance)}</strong></Link> : <button className="connectButton" type="button" onClick={session.openBot}>{session.state === "checking" ? "..." : "Войти"}</button>}
-          <Link href="/profile" className="avatarButton" aria-label="Профиль">{session.profile?.photo_url ? <img src={session.profile.photo_url} alt="" /> : <span>{initial}</span>}</Link>
+          {session.profile ? <Link prefetch={false} href="/profile" className="balanceButton"><strong>{rubles(session.profile.balance)}</strong></Link> : <button className="connectButton" type="button" onClick={session.openBot}>{session.state === "checking" ? "..." : "Войти"}</button>}
+          <Link prefetch={false} href="/profile" className="avatarButton" aria-label="Профиль">{session.profile?.photo_url ? <img src={session.profile.photo_url} alt="" decoding="async" /> : <span>{initial}</span>}</Link>
         </div>
       </header>}
 
@@ -39,7 +39,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       {!flowMode && <nav className="bottomBar" aria-label="Навигация">
         {navItems.map((item) => {
           const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
-          return <Link key={item.href} href={item.href} className={`bottomItem ${active ? "active" : ""}`}>
+          return <Link prefetch={false} key={item.href} href={item.href} className={`bottomItem ${active ? "active" : ""}`}>
             <span className="bottomIcon"><Icon name={item.icon} size={21} /></span><span>{item.label}</span>
             {item.href === "/messages" && session.unreadChats > 0 && <i className="navUnread">{Math.min(session.unreadChats, 9)}</i>}
           </Link>;
