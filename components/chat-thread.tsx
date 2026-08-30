@@ -34,7 +34,7 @@ function dayLabel(value: string) {
 }
 
 export default function ChatThread({ id }: { id: string }) {
-  const session = useTelegramSession();
+  const { state: sessionState, callChatAction, openBot } = useTelegramSession();
   const [thread, setThread] = useState<Thread | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
@@ -49,11 +49,11 @@ export default function ChatThread({ id }: { id: string }) {
   const loadInFlight = useRef(false);
 
   const load = useCallback(async (silent = false) => {
-    if (session.state !== "verified") { if (!silent) setLoading(false); return; }
+    if (sessionState !== "verified") { if (!silent) setLoading(false); return; }
     if (loadInFlight.current) return;
     loadInFlight.current = true;
     try {
-      const result = await session.callChatAction("open_thread", { threadId: id }) as OpenResult;
+      const result = await callChatAction("open_thread", { threadId: id }) as OpenResult;
       const nextThread = result.thread ?? null;
       const nextMessages = result.messages ?? [];
       const nextProfiles = result.profiles ?? [];
@@ -82,10 +82,10 @@ export default function ChatThread({ id }: { id: string }) {
       loadInFlight.current = false;
       if (!silent) setLoading(false);
     }
-  }, [id, session]);
+  }, [id, sessionState, callChatAction]);
 
   useEffect(() => {
-    if (session.state !== "verified") { if (["browser","unavailable","error"].includes(session.state)) setLoading(false); return; }
+    if (sessionState !== "verified") { if (["browser","unavailable","error"].includes(sessionState)) setLoading(false); return; }
     const poll = () => { if (document.visibilityState === "visible") void load(true); };
     void load();
     const timer = window.setInterval(poll, 4_000);
@@ -94,7 +94,7 @@ export default function ChatThread({ id }: { id: string }) {
       window.clearInterval(timer);
       document.removeEventListener("visibilitychange", poll);
     };
-  }, [session.state, id, load]);
+  }, [sessionState, load]);
 
   useEffect(() => {
     if (!messages.length) return;
@@ -112,14 +112,14 @@ export default function ChatThread({ id }: { id: string }) {
     const body = text.trim(); if (!body || sending) return;
     setSending(true); setText(""); setError(null);
     try {
-      const result = await session.callChatAction("send_message", { threadId: id, body });
+      const result = await callChatAction("send_message", { threadId: id, body });
       const message = result.message as Message | undefined;
       if (message) setMessages((current) => current.some((item) => item.id === message.id) ? current : [...current, message]);
     } catch { setText(body); setError("Сообщение не отправлено"); }
     finally { setSending(false); }
   }
 
-  if (session.state !== "verified" && !loading) return <div className="chatScreen"><div className="chatFlowHeader"><Link href="/messages"><Icon name="arrowLeft"/></Link><strong>Чат</strong></div><div className="flatAuth"><strong>Открой TradeUP в Telegram</strong><button onClick={session.openBot}>Открыть</button></div></div>;
+  if (sessionState !== "verified" && !loading) return <div className="chatScreen"><div className="chatFlowHeader"><Link href="/messages"><Icon name="arrowLeft"/></Link><strong>Чат</strong></div><div className="flatAuth"><strong>Открой TradeUP в Telegram</strong><button onClick={openBot}>Открыть</button></div></div>;
 
   return (
     <div className="chatScreen">
