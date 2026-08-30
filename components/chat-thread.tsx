@@ -14,6 +14,7 @@ type ItemType = { name: string; brand: string | null; image_url: string | null; 
 type InventoryJoin = { item_types: ItemType | ItemType[] | null };
 type Listing = { id: string; title: string; price: number | string; status: string; seller_id: string; inventory_items: InventoryJoin | InventoryJoin[] | null };
 type OpenResult = { profileId?: string; thread?: Thread; messages?: Message[]; profiles?: Profile[]; listings?: Listing[] };
+type PollResult = { profileId?: string; thread?: Thread; messages?: Message[] };
 
 function itemType(listing: Listing | null) {
   if (!listing?.inventory_items) return null;
@@ -46,12 +47,13 @@ export default function ChatThread({ id }: { id: string }) {
   const [error, setError] = useState<string | null>(null);
   const endRef = useRef<HTMLDivElement | null>(null);
   const firstLoad = useRef(true);
-  const loadInFlight = useRef(false);
+  const requestInFlight = useRef(false);
+  const lastMessageAt = useRef("");
 
   const load = useCallback(async (silent = false) => {
     if (sessionState !== "verified") { if (!silent) setLoading(false); return; }
-    if (loadInFlight.current) return;
-    loadInFlight.current = true;
+    if (requestInFlight.current) return;
+    requestInFlight.current = true;
     try {
       const result = await callChatAction("open_thread", { threadId: id }) as OpenResult;
       const nextThread = result.thread ?? null;
@@ -59,42 +61,52 @@ export default function ChatThread({ id }: { id: string }) {
       const nextProfiles = result.profiles ?? [];
       const nextListings = result.listings ?? [];
 
-      setThread((current) => current?.id === nextThread?.id && current?.last_message_at === nextThread?.last_message_at ? current : nextThread);
-      setMessages((current) => {
-        const currentLast = current.at(-1)?.id;
-        const nextLast = nextMessages.at(-1)?.id;
-        return current.length === nextMessages.length && currentLast === nextLast ? current : nextMessages;
-      });
-      setProfiles((current) => {
-        const currentKey = current.map((item) => `${item.id}:${item.is_online}:${item.last_seen_at}`).join("|");
-        const nextKey = nextProfiles.map((item) => `${item.id}:${item.is_online}:${item.last_seen_at}`).join("|");
-        return currentKey === nextKey ? current : nextProfiles;
-      });
-      setListings((current) => {
-        const currentKey = current.map((item) => `${item.id}:${item.status}:${item.price}`).join("|");
-        const nextKey = nextListings.map((item) => `${item.id}:${item.status}:${item.price}`).join("|");
-        return currentKey === nextKey ? current : nextListings;
-      });
-      if (!silent) setProfileId(result.profileId ?? "");
+      setThread(nextThread);
+      setMessages(nextMessages);
+      setProfiles(nextProfiles);
+      setListings(nextListings);
+      setProfileId(result.profileId ?? "");
+      lastMessageAt.current = nextMessages.at(-1)?.created_at ?? "";
       setError(null);
     } catch { setError("Чат недоступен"); }
     finally {
-      loadInFlight.current = false;
+      requestInFlight.current = false;
       if (!silent) setLoading(false);
     }
   }, [id, sessionState, callChatAction]);
 
+  const poll = useCallback(async () => {
+    if (sessionState !== "verified" || document.visibilityState !== "visible" || requestInFlight.current) return;
+    requestInFlight.current = true;
+    try {
+      const result = await callChatAction("poll_thread", { threadId: id, since: lastMessageAt.current }) as PollResult;
+      if (result.thread) setThread((current) => current?.last_message_at === result.thread?.last_message_at ? current : result.thread ?? current);
+      if (result.profileId) setProfileId((current) => current || result.profileId || "");
+      const incoming = result.messages ?? [];
+      if (incoming.length > 0) {
+        setMessages((current) => {
+          const known = new Set(current.map((message) => message.id));
+          const fresh = incoming.filter((message) => !known.has(message.id));
+          return fresh.length ? [...current, ...fresh] : current;
+        });
+        lastMessageAt.current = incoming.at(-1)?.created_at ?? lastMessageAt.current;
+      }
+      setError(null);
+    } catch { /* keep current chat visible during a transient poll failure */ }
+    finally { requestInFlight.current = false; }
+  }, [id, sessionState, callChatAction]);
+
   useEffect(() => {
     if (sessionState !== "verified") { if (["browser","unavailable","error"].includes(sessionState)) setLoading(false); return; }
-    const poll = () => { if (document.visibilityState === "visible") void load(true); };
     void load();
-    const timer = window.setInterval(poll, 4_000);
-    document.addEventListener("visibilitychange", poll);
+    const timer = window.setInterval(() => void poll(), 3_000);
+    const onVisibility = () => { if (document.visibilityState === "visible") void load(true); };
+    document.addEventListener("visibilitychange", onVisibility);
     return () => {
       window.clearInterval(timer);
-      document.removeEventListener("visibilitychange", poll);
+      document.removeEventListener("visibilitychange", onVisibility);
     };
-  }, [sessionState, load]);
+  }, [sessionState, load, poll]);
 
   useEffect(() => {
     if (!messages.length) return;
@@ -114,7 +126,10 @@ export default function ChatThread({ id }: { id: string }) {
     try {
       const result = await callChatAction("send_message", { threadId: id, body });
       const message = result.message as Message | undefined;
-      if (message) setMessages((current) => current.some((item) => item.id === message.id) ? current : [...current, message]);
+      if (message) {
+        setMessages((current) => current.some((item) => item.id === message.id) ? current : [...current, message]);
+        lastMessageAt.current = message.created_at;
+      }
     } catch { setText(body); setError("Сообщение не отправлено"); }
     finally { setSending(false); }
   }
