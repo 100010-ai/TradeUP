@@ -77,7 +77,7 @@ export type LiveInventoryListing = {
 };
 
 export const BOT_USERNAME = "TradeUpGame_Bot";
-export const BOT_URL = `https://t.me/${BOT_USERNAME}?startapp=market`;
+export const BOT_URL = `https://t.me/${BOT_USERNAME}?startapp=market&mode=fullscreen`;
 
 export const categoryMeta: Record<string, { short: string }> = {
   phones: { short: "Смартфоны" },
