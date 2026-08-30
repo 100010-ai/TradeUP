@@ -14,6 +14,7 @@ type TelegramWebAppUser = {
 
 type TelegramInset = { top: number; bottom: number; left: number; right: number };
 type TelegramEventCallback = (...args: unknown[]) => void;
+type TelegramInvoiceStatus = "paid" | "cancelled" | "failed" | "pending";
 type TelegramHapticFeedback = {
   impactOccurred?(style: "light" | "medium" | "heavy" | "rigid" | "soft"): void;
   notificationOccurred?(type: "error" | "success" | "warning"): void;
@@ -40,6 +41,7 @@ type TelegramWebApp = {
   isVersionAtLeast?(version: string): boolean;
   requestFullscreen?(): void;
   exitFullscreen?(): void;
+  openInvoice?(url: string, callback?: (status: TelegramInvoiceStatus) => void): void;
   setHeaderColor?(color: string): void;
   setBackgroundColor?(color: string): void;
   setBottomBarColor?(color: string): void;
