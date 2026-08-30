@@ -14,6 +14,11 @@ type TelegramWebAppUser = {
 
 type TelegramInset = { top: number; bottom: number; left: number; right: number };
 type TelegramEventCallback = (...args: unknown[]) => void;
+type TelegramHapticFeedback = {
+  impactOccurred?(style: "light" | "medium" | "heavy" | "rigid" | "soft"): void;
+  notificationOccurred?(type: "error" | "success" | "warning"): void;
+  selectionChanged?(): void;
+};
 
 type TelegramWebApp = {
   initData: string;
@@ -28,6 +33,7 @@ type TelegramWebApp = {
   isFullscreen?: boolean;
   safeAreaInset?: TelegramInset;
   contentSafeAreaInset?: TelegramInset;
+  HapticFeedback?: TelegramHapticFeedback;
   ready(): void;
   expand(): void;
   close(): void;
