@@ -7,10 +7,14 @@ const allowedActions = new Set([
   "inventory",
   "favorites",
   "deals",
+  "offers",
   "create_listing",
   "cancel_listing",
   "toggle_favorite",
   "buy_listing",
+  "create_offer",
+  "cancel_offer",
+  "respond_offer",
 ]);
 
 export async function POST(request: Request) {
