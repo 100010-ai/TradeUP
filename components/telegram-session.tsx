@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { BOT_URL, BOT_USERNAME, type PlayerProfile, type SessionCounts, type TelegramUser } from "@/lib/product";
 
 type SessionState = "checking" | "verified" | "browser" | "unavailable" | "error";
@@ -74,6 +74,7 @@ export function TelegramSessionProvider({ children }: { children: React.ReactNod
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
   const [starterGranted, setStarterGranted] = useState(0);
   const [unreadChats, setUnreadChats] = useState(0);
+  const unreadRequestInFlight = useRef(false);
 
   const openBot = useCallback(() => { window.location.href = BOT_URL; }, []);
   const request = useCallback(async (url: string, action: string, payload: Record<string, unknown> = {}) => {
@@ -90,7 +91,6 @@ export function TelegramSessionProvider({ children }: { children: React.ReactNod
     if (!webApp) { setState("browser"); return; }
     webApp.ready();
     webApp.expand();
-    configureTelegramChrome(webApp);
     if (!webApp.initData) { setState("unavailable"); return; }
     try {
       const response = await fetch("/api/auth/telegram", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ initData: webApp.initData }), cache: "no-store" });
@@ -101,8 +101,11 @@ export function TelegramSessionProvider({ children }: { children: React.ReactNod
   }, []);
 
   const refreshUnreadChats = useCallback(async () => {
-    if (!getInitData()) return;
-    try { setUnreadChats(countUnread(await request("/api/chat", "threads"))); } catch { /* non-critical badge */ }
+    if (!getInitData() || unreadRequestInFlight.current) return;
+    unreadRequestInFlight.current = true;
+    try { setUnreadChats(countUnread(await request("/api/chat", "threads"))); }
+    catch { /* non-critical badge */ }
+    finally { unreadRequestInFlight.current = false; }
   }, [request]);
 
   const callAction = useCallback(async (action: string, payload: Record<string, unknown> = {}) => {
@@ -110,6 +113,7 @@ export function TelegramSessionProvider({ children }: { children: React.ReactNod
     if (result.profile) setProfile(result.profile);
     if (action === "toggle_favorite" && typeof result.favorite === "boolean" && typeof payload.listingId === "string") {
       setFavoriteIds((current) => { const next = new Set(current); if (result.favorite) next.add(payload.listingId as string); else next.delete(payload.listingId as string); return next; });
+      setCounts((current) => ({ ...current, favorites: Math.max(0, current.favorites + (result.favorite ? 1 : -1)) }));
     }
     if (["create_listing", "cancel_listing", "buy_listing"].includes(action)) await refresh();
     return result;
@@ -136,9 +140,14 @@ export function TelegramSessionProvider({ children }: { children: React.ReactNod
 
   useEffect(() => {
     if (state !== "verified") return;
-    void refreshUnreadChats();
-    const timer = window.setInterval(() => void refreshUnreadChats(), 15000);
-    return () => window.clearInterval(timer);
+    const poll = () => { if (document.visibilityState === "visible") void refreshUnreadChats(); };
+    poll();
+    const timer = window.setInterval(poll, 30_000);
+    document.addEventListener("visibilitychange", poll);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", poll);
+    };
   }, [state, refreshUnreadChats]);
 
   const value = useMemo<TelegramSessionContextValue>(() => ({ state, user, profile, counts, favoriteIds, starterGranted, unreadChats, botUsername: BOT_USERNAME, botUrl: BOT_URL, refresh, refreshUnreadChats, callAction, callChatAction, openBot }), [state, user, profile, counts, favoriteIds, starterGranted, unreadChats, refresh, refreshUnreadChats, callAction, callChatAction, openBot]);
