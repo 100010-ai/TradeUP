@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import Image from "next/image";
+import { useState } from "react";
 import Icon, { categoryIconName } from "@/components/icon";
 
 type ProductImageProps = {
@@ -11,13 +12,23 @@ type ProductImageProps = {
 };
 
 export default function ProductImage({ src, alt, categoryId = "", loading = "lazy" }: ProductImageProps) {
-  const [failed, setFailed] = useState(!src);
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
 
-  useEffect(() => { setFailed(!src); }, [src]);
-
-  if (!src || failed) {
+  if (!src || failedSrc === src) {
     return <span className="productImageFallback" aria-hidden="true"><Icon name={categoryIconName(categoryId)} size={44} /></span>;
   }
 
-  return <img className="productImageMedia" src={src} alt={alt} loading={loading} decoding="async" referrerPolicy="no-referrer" onError={() => setFailed(true)} />;
+  return (
+    <Image
+      className="productImageMedia"
+      src={src}
+      alt={alt}
+      width={640}
+      height={640}
+      sizes={loading === "eager" ? "(max-width: 760px) 100vw, 760px" : "(max-width: 640px) 50vw, 320px"}
+      loading={loading}
+      fetchPriority={loading === "eager" ? "high" : "auto"}
+      onError={() => setFailedSrc(src)}
+    />
+  );
 }
