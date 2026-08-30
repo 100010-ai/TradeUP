@@ -14,6 +14,7 @@ import "./final-polish.css";
 import "./system-tools.css";
 import "./navbar-lock.css";
 import "./notifications.css";
+import "./photo-polish.css";
 
 export const metadata: Metadata = {
   title: { default: "TradeUP", template: "%s · TradeUP" },
