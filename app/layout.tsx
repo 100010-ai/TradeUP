@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import { TelegramSessionProvider } from "@/components/telegram-session";
+import TelegramSafeAreaGuard from "@/components/telegram-safe-area-guard";
 import "./globals.css";
 import "./product-plus.css";
 import "./dark-redesign.css";
@@ -17,6 +18,7 @@ import "./notifications.css";
 import "./photo-polish.css";
 import "./cosmetics.css";
 import "./professional-ui.css";
+import "./safe-area-guard.css";
 
 export const metadata: Metadata = {
   title: { default: "TradeUP", template: "%s · TradeUP" },
@@ -36,5 +38,5 @@ export const viewport: Viewport = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="ru"><head><Script src="https://telegram.org/js/telegram-web-app.js?63" strategy="beforeInteractive" /></head><body><TelegramSessionProvider>{children}</TelegramSessionProvider></body></html>;
+  return <html lang="ru"><head><Script src="https://telegram.org/js/telegram-web-app.js?63" strategy="beforeInteractive" /></head><body><TelegramSessionProvider><TelegramSafeAreaGuard/>{children}</TelegramSessionProvider></body></html>;
 }
