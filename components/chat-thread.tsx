@@ -52,6 +52,7 @@ export default function ChatThread({ id }: { id: string }) {
   const firstLoad = useRef(true);
   const requestInFlight = useRef(false);
   const lastMessageAt = useRef("");
+  const localSequence = useRef(0);
 
   const load = useCallback(async (silent = false) => {
     if (sessionState !== "verified") { if (!silent) setLoading(false); return; }
@@ -123,7 +124,8 @@ export default function ChatThread({ id }: { id: string }) {
   }
 
   async function sendBody(body: string, localId?: string) {
-    const tempId = localId ?? `local-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    if (!localId) localSequence.current += 1;
+    const tempId = localId ?? `local-${localSequence.current}`;
     const now = new Date().toISOString();
     if (!localId) setMessages((current) => [...current, { id: tempId, thread_id: id, sender_id: profileId, body, created_at: now, clientState: "pending" }]);
     else setMessages((current) => current.map((item) => item.id === localId ? { ...item, clientState: "pending" } : item));
