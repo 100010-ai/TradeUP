@@ -42,17 +42,18 @@ export default function ProfileCenter() {
       <section className="rankCard">
         <div className="rankHeader"><div><span className="sectionEyebrow">Прогресс</span><h2>{level}</h2></div><strong>{profile.rating} / {nextRating}</strong></div>
         <div className="rankTrack"><i style={{ width: `${progress}%` }} /></div>
-        <p>Рейтинг станет влиять на доверие продавцов, лимиты и доступ к дорогим категориям по мере развития экономики.</p>
+        <p>За успешные покупки и продажи рейтинг растёт. Он станет основой доверия, лимитов и доступа к дорогим категориям.</p>
       </section>
 
       <section className="profileMenu">
+        <Link href="/leaderboard"><div><span>♜</span><div><strong>Топ перекупов</strong><small>Рейтинг по реальной прибыли</small></div></div><b>›</b></Link>
         <Link href="/sell"><div><span>▣</span><div><strong>Мой инвентарь</strong><small>{session.counts.inventory} предметов</small></div></div><b>›</b></Link>
         <Link href="/favorites"><div><span>♡</span><div><strong>Избранное</strong><small>{session.counts.favorites} сохранено</small></div></div><b>›</b></Link>
-        <Link href="/deals"><div><span>⇄</span><div><strong>История сделок</strong><small>{profile.deals_count} операций</small></div></div><b>›</b></Link>
+        <Link href="/deals"><div><span>⇄</span><div><strong>Сделки и торг</strong><small>{profile.deals_count} завершённых операций</small></div></div><b>›</b></Link>
         <a href={session.botUrl}><div><span>↗</span><div><strong>@{session.botUsername}</strong><small>Открыть бота</small></div></div><b>›</b></a>
       </section>
 
-      <div className="profileFootnote">TradeUP хранит игровые данные отдельно от Telegram. Публично видны только имя, аватар, рейтинг и число сделок.</div>
+      <div className="profileFootnote">TradeUP хранит приватные игровые данные отдельно. Публичный профиль показывает только игровые показатели, нужные рынку.</div>
     </div>
   );
 }

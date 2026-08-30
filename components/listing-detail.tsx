@@ -44,6 +44,8 @@ export default function ListingDetail({ id }: { id: string }) {
   const [history, setHistory] = useState<PricePoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+  const [offerOpen, setOfferOpen] = useState(false);
+  const [offerAmount, setOfferAmount] = useState("");
   const [message, setMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -66,6 +68,7 @@ export default function ListingDetail({ id }: { id: string }) {
       if (historyResult.error) throw historyResult.error;
       if (active) {
         setListing(typed);
+        setOfferAmount(String(Math.max(1, Math.round(Number(typed.price) * 0.9))));
         setHistory((historyResult.data ?? []) as PricePoint[]);
       }
     }
@@ -108,6 +111,35 @@ export default function ListingDetail({ id }: { id: string }) {
     }
   }
 
+  async function createOffer(event: React.FormEvent) {
+    event.preventDefault();
+    if (!listing) return;
+    if (session.state !== "verified") {
+      session.openBot();
+      return;
+    }
+    setActionLoading(true);
+    setMessage(null);
+    try {
+      await session.callAction("create_offer", { listingId: id, amount: Number(offerAmount) });
+      setOfferOpen(false);
+      setMessage(`Предложение ${rubles(offerAmount)} отправлено продавцу`);
+    } catch (error) {
+      const code = error instanceof Error ? error.message : "game_action_failed";
+      setMessage(
+        code === "invalid_offer_amount"
+          ? "Предложение должно быть ниже цены лота, но не меньше 50%"
+          : code === "insufficient_funds"
+            ? "На балансе недостаточно средств для такого предложения"
+            : code === "listing_not_active"
+              ? "Лот уже недоступен"
+              : "Не удалось отправить предложение",
+      );
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
   async function cancel() {
     setActionLoading(true);
     setMessage(null);
@@ -140,6 +172,9 @@ export default function ListingDetail({ id }: { id: string }) {
   const isOwner = session.profile?.id === listing.seller_id;
   const favorite = session.favoriteIds.has(listing.id);
   const pricePoints = history.map((item) => Number(item.price)).filter(Number.isFinite);
+  const askingPrice = Number(listing.price);
+  const offerNumber = Number(offerAmount || 0);
+  const offerPercent = askingPrice > 0 ? Math.round((offerNumber / askingPrice) * 100) : 0;
 
   return (
     <div className="listingDetailPage">
@@ -175,18 +210,36 @@ export default function ListingDetail({ id }: { id: string }) {
             <div><span>Просмотры</span><strong>{listing.views}</strong></div>
           </div>
 
-          {message && <div className="actionMessage">{message}</div>}
+          {message && <div className="actionMessage successAware">{message}</div>}
 
           <div className="detailActions">
             {isOwner ? (
               <button type="button" className="secondaryDanger" onClick={() => void cancel()} disabled={actionLoading}>Снять с продажи</button>
             ) : (
-              <button type="button" className="buyButton" onClick={() => void buy()} disabled={actionLoading}>
-                {actionLoading ? "Проверяем…" : session.state === "verified" ? `Купить за ${rubles(listing.price)}` : "Открыть в Telegram"}
-              </button>
+              <>
+                <button type="button" className="buyButton" onClick={() => void buy()} disabled={actionLoading}>
+                  {actionLoading ? "Проверяем…" : session.state === "verified" ? `Купить за ${rubles(listing.price)}` : "Открыть в Telegram"}
+                </button>
+                <button type="button" className="offerButton" onClick={() => session.state === "verified" ? setOfferOpen((value) => !value) : session.openBot()} disabled={actionLoading}>
+                  Предложить цену
+                </button>
+              </>
             )}
-            {!isOwner && <span className="feeHint">Комиссию 4% платит продавец. С тебя только цена лота.</span>}
+            {!isOwner && <span className="feeHint">Комиссию 4% платит продавец. С тебя только согласованная цена.</span>}
           </div>
+
+          {offerOpen && !isOwner && (
+            <form className="offerComposer" onSubmit={createOffer}>
+              <div className="offerComposerHead"><div><span className="sectionEyebrow">Торг</span><strong>Твоя цена</strong></div><button type="button" onClick={() => setOfferOpen(false)}>×</button></div>
+              <div className="offerInputRow"><input value={offerAmount} onChange={(event) => setOfferAmount(event.target.value.replace(/[^0-9]/g, ""))} inputMode="numeric" autoFocus /><b>₽</b></div>
+              <div className="offerQuickRow">
+                {[85, 90, 95].map((value) => <button key={value} type="button" onClick={() => setOfferAmount(String(Math.round(askingPrice * value / 100)))}>{value}%</button>)}
+                <span>{offerPercent}% от цены</span>
+              </div>
+              <button className="offerSubmit" type="submit" disabled={actionLoading || !offerAmount}>Отправить предложение</button>
+              <p>Минимум 50% от цены. Деньги спишутся только если продавец примет оффер.</p>
+            </form>
+          )}
         </div>
       </section>
 

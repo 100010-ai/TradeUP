@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import { TelegramSessionProvider } from "@/components/telegram-session";
 import "./globals.css";
+import "./product-plus.css";
 
 export const metadata: Metadata = {
   title: { default: "TradeUP", template: "%s · TradeUP" },

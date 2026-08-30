@@ -1,0 +1,107 @@
+.offerButton {
+  width: 100%; min-height: 48px; margin-top: 8px;
+  border: 1px solid var(--line); border-radius: 15px;
+  background: var(--surface); color: var(--text); font-weight: 850; cursor: pointer;
+}
+.offerButton:hover { background: var(--surface-soft); }
+.offerComposer {
+  margin-top: 12px; padding: 15px; border: 1px solid #d8e7df; border-radius: 17px;
+  background: #f8fcfa; box-shadow: var(--shadow-soft);
+}
+.offerComposerHead { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.offerComposerHead span, .offerComposerHead strong { display: block; }
+.offerComposerHead strong { margin-top: 3px; font-size: 14px; }
+.offerComposerHead > button { width: 31px; height: 31px; border: 0; border-radius: 9px; background: var(--surface); color: var(--muted); cursor: pointer; }
+.offerInputRow { position: relative; margin-top: 12px; }
+.offerInputRow input { width: 100%; height: 50px; padding: 0 42px 0 13px; border: 1px solid #cfe1d8; border-radius: 13px; outline: 0; background: #fff; font-size: 20px; font-weight: 900; }
+.offerInputRow input:focus { border-color: #83c4a8; box-shadow: 0 0 0 3px rgba(22,163,109,.08); }
+.offerInputRow b { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--muted); }
+.offerQuickRow { display: flex; align-items: center; gap: 6px; margin-top: 8px; }
+.offerQuickRow button { padding: 7px 9px; border: 0; border-radius: 8px; background: var(--accent-soft); color: var(--accent-dark); font-size: 9px; font-weight: 850; cursor: pointer; }
+.offerQuickRow span { margin-left: auto; color: var(--muted); font-size: 9px; }
+.offerSubmit { width: 100%; min-height: 44px; margin-top: 11px; border: 0; border-radius: 12px; background: var(--text); color: #fff; font-size: 11px; font-weight: 850; cursor: pointer; }
+.offerComposer > p { margin: 7px 2px 0; color: var(--muted); font-size: 8px; line-height: 1.4; text-align: center; }
+.successAware { border-color: #d5eadf; background: #f6fbf8; color: #326a50; }
+.pendingCounter { display: flex; flex-direction: column; align-items: flex-end; }
+.pendingCounter strong { font-size: 27px; letter-spacing: -.04em; }
+.pendingCounter span { color: var(--muted); font-size: 9px; }
+.dealsTabs button { position: relative; }
+.dealsTabs button i { display: inline-grid; min-width: 17px; height: 17px; place-items: center; margin-left: 4px; padding: 0 4px; border-radius: 8px; background: var(--accent); color: #fff; font-size: 8px; font-style: normal; }
+.offersLayout { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.offersColumn { min-width: 0; }
+.offersHeading { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; margin: 6px 2px 9px; }
+.offersHeading h2 { margin: 4px 0 0; font-size: 18px; letter-spacing: -.03em; }
+.offersHeading > strong { display: grid; min-width: 30px; height: 30px; place-items: center; border-radius: 10px; background: var(--surface-strong); font-size: 11px; }
+.offerCard { margin-bottom: 8px; padding: 14px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); box-shadow: var(--shadow-soft); }
+.offerCard.status-accepted { border-color: #cfe7db; }
+.offerCard.status-declined, .offerCard.status-cancelled, .offerCard.status-expired { opacity: .72; }
+.offerTop { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.offerTop small { color: var(--muted-2); font-size: 8px; }
+.offerStatus { padding: 5px 7px; border-radius: 7px; background: var(--surface-soft); color: var(--muted); font-size: 8px; font-weight: 900; }
+.offerStatus.pending { background: var(--warning-soft); color: var(--warning); }
+.offerStatus.accepted { background: var(--accent-soft); color: var(--accent-dark); }
+.offerStatus.declined { background: var(--danger-soft); color: var(--danger); }
+.offerCard > a { text-decoration: none; }
+.offerCard h3 { margin: 10px 0 0; font-size: 14px; line-height: 1.25; }
+.offerMoney { display: flex; align-items: baseline; gap: 8px; margin-top: 8px; }
+.offerMoney strong { font-size: 20px; letter-spacing: -.035em; }
+.offerMoney span { color: var(--muted); font-size: 8px; }
+.offerPerson { display: flex; align-items: center; gap: 8px; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); }
+.offerPerson strong, .offerPerson small { display: block; }
+.offerPerson strong { font-size: 10px; }
+.offerPerson small { margin-top: 2px; color: var(--muted); font-size: 8px; }
+.offerActions { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-top: 11px; }
+.acceptOffer, .declineOffer, .cancelOfferButton { min-height: 39px; border: 0; border-radius: 11px; font-size: 10px; font-weight: 850; cursor: pointer; }
+.acceptOffer { background: var(--accent); color: #fff; }
+.declineOffer { background: var(--surface-soft); color: var(--text); }
+.cancelOfferButton { width: 100%; margin-top: 11px; background: var(--surface-soft); color: var(--danger); }
+.miniEmpty { padding: 20px; border: 1px dashed #d9d9d3; border-radius: 15px; color: var(--muted); font-size: 10px; line-height: 1.45; }
+
+.leaderboardSkeleton { min-height: 430px; border: 1px solid var(--line); border-radius: 22px; background: linear-gradient(105deg,#eeeeea 20%,#f8f8f6 40%,#eeeeea 60%); background-size: 240% 100%; animation: shimmer 1.25s linear infinite; }
+.podiumGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; align-items: stretch; }
+.podiumCard { position: relative; display: flex; min-width: 0; flex-direction: column; align-items: center; padding: 23px 15px 17px; border: 1px solid var(--line); border-radius: 20px; background: var(--surface); box-shadow: var(--shadow-soft); text-align: center; }
+.podiumCard.place-1 { background: linear-gradient(180deg,#fffdf4,#fff); border-color: #e8dfbd; }
+.podiumCard.place-2 { background: linear-gradient(180deg,#f7f8f8,#fff); }
+.podiumCard.place-3 { background: linear-gradient(180deg,#fcf6f1,#fff); border-color: #eadbd0; }
+.podiumPlace { position: absolute; left: 12px; top: 12px; color: var(--muted); font-size: 10px; font-weight: 900; }
+.podiumAvatar { display: grid; width: 62px; height: 62px; place-items: center; overflow: hidden; border-radius: 18px; background: #202220; color: #fff; font-size: 20px; font-weight: 900; }
+.podiumAvatar img { width: 100%; height: 100%; object-fit: cover; }
+.podiumCard h2 { margin: 11px 0 0; max-width: 100%; overflow: hidden; font-size: 16px; text-overflow: ellipsis; white-space: nowrap; }
+.podiumCard p { margin: 3px 0 0; color: var(--muted); font-size: 9px; }
+.podiumCard > strong { margin-top: 13px; color: var(--accent-dark); font-size: 19px; letter-spacing: -.035em; }
+.podiumMeta { display: flex; gap: 8px; margin-top: 8px; color: var(--muted); font-size: 8px; }
+.leaderList { margin-top: 14px; overflow: hidden; border: 1px solid var(--line); border-radius: 19px; background: var(--surface); }
+.leaderListHead, .leaderRow { display: grid; grid-template-columns: 60px minmax(160px,1fr) 90px 70px 120px; gap: 8px; align-items: center; }
+.leaderListHead { padding: 10px 13px; border-bottom: 1px solid var(--line); background: var(--surface-soft); color: var(--muted); font-size: 8px; font-weight: 850; text-transform: uppercase; letter-spacing: .05em; }
+.leaderRow { min-height: 67px; padding: 9px 13px; border-bottom: 1px solid var(--line); font-size: 10px; }
+.leaderRow:last-child { border-bottom: 0; }
+.leaderRank { font-size: 12px; }
+.leaderPerson { display: flex; min-width: 0; align-items: center; gap: 9px; }
+.leaderAvatar { display: grid; width: 39px; height: 39px; flex: 0 0 auto; place-items: center; overflow: hidden; border-radius: 11px; background: #222; color: #fff; font-size: 11px; font-weight: 900; }
+.leaderAvatar img { width: 100%; height: 100%; object-fit: cover; }
+.leaderPerson > div:last-child { min-width: 0; }
+.leaderPerson strong, .leaderPerson small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.leaderPerson strong { font-size: 10px; }
+.leaderPerson small { margin-top: 2px; color: var(--muted); font-size: 8px; }
+.leaderRow > span { color: var(--muted); }
+.leaderRow > strong:last-child { text-align: right; }
+.leaderboardNote { margin: 10px 0 0; color: var(--muted-2); font-size: 8px; text-align: center; }
+
+@media (max-width: 700px) {
+  .offersLayout { grid-template-columns: 1fr; }
+  .leaderListHead { display: none; }
+  .leaderRow { grid-template-columns: 42px 1fr auto; gap: 8px; }
+  .leaderRow > span:nth-of-type(1), .leaderRow > span:nth-of-type(2) { display: none; }
+  .leaderRow > strong:last-child { grid-column: 3; }
+}
+@media (max-width: 480px) {
+  .podiumGrid { grid-template-columns: 1fr; }
+  .podiumCard { min-height: 128px; display: grid; grid-template-columns: 58px 1fr auto; grid-template-rows: auto auto auto; column-gap: 11px; text-align: left; align-items: center; }
+  .podiumPlace { position: static; grid-column: 3; grid-row: 1; justify-self: end; }
+  .podiumAvatar { grid-column: 1; grid-row: 1 / 4; width: 54px; height: 54px; }
+  .podiumCard h2 { grid-column: 2; grid-row: 1; margin: 0; }
+  .podiumCard p { grid-column: 2; grid-row: 2; }
+  .podiumCard > strong { grid-column: 2 / 4; grid-row: 3; margin: 3px 0 0; }
+  .podiumMeta { display: none; }
+  .offerQuickRow span { display: none; }
+}
