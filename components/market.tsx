@@ -33,6 +33,18 @@ type TelegramUser = {
   photo_url?: string;
 };
 
+type PlayerProfile = {
+  id: string;
+  username: string | null;
+  first_name: string;
+  photo_url: string | null;
+  balance: number | string;
+  rating: number;
+  deals_count: number;
+  is_online: boolean;
+  last_seen_at: string;
+};
+
 type TelegramState = "checking" | "verified" | "browser" | "unavailable" | "error";
 
 const BOT_USERNAME = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME ?? "TradeUpGame_Bot";
@@ -50,6 +62,7 @@ export default function Market() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [telegramUser, setTelegramUser] = useState<TelegramUser | null>(null);
+  const [playerProfile, setPlayerProfile] = useState<PlayerProfile | null>(null);
   const [telegramState, setTelegramState] = useState<TelegramState>("checking");
 
   async function loadMarket() {
@@ -124,6 +137,7 @@ export default function Market() {
         const payload = (await response.json()) as {
           ok?: boolean;
           user?: TelegramUser;
+          profile?: PlayerProfile | null;
         };
 
         if (!response.ok || !payload.ok || !payload.user) {
@@ -132,6 +146,7 @@ export default function Market() {
 
         if (!cancelled) {
           setTelegramUser(payload.user);
+          setPlayerProfile(payload.profile ?? null);
           setTelegramState("verified");
         }
       })
@@ -167,16 +182,24 @@ export default function Market() {
           <div className="brand">Trade<span>UP</span></div>
           <div className="brandCaption">онлайн-рынок</div>
         </div>
-        <button
-          className="profileButton"
-          type="button"
-          aria-label="Профиль"
-          onClick={() => {
-            if (telegramState !== "verified") window.location.href = BOT_URL;
-          }}
-        >
-          {profileInitial}
-        </button>
+        <div className="topActions">
+          {playerProfile && (
+            <div className="balanceChip" title={`Рейтинг: ${playerProfile.rating}`}>
+              <span>Баланс</span>
+              <strong>{money.format(Number(playerProfile.balance))} ₽</strong>
+            </div>
+          )}
+          <button
+            className="profileButton"
+            type="button"
+            aria-label="Профиль"
+            onClick={() => {
+              if (telegramState !== "verified") window.location.href = BOT_URL;
+            }}
+          >
+            {profileInitial}
+          </button>
+        </div>
       </header>
 
       {telegramState !== "verified" && (

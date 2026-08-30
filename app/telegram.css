@@ -1,3 +1,34 @@
+.topActions {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.balanceChip {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  min-width: 92px;
+  padding: 8px 11px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+}
+
+.balanceChip span {
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.balanceChip strong {
+  margin-top: 2px;
+  font-size: 13px;
+  letter-spacing: -0.02em;
+}
+
 .tgNotice,
 .tgUserBar {
   display: flex;
@@ -75,6 +106,15 @@
 }
 
 @media (max-width: 460px) {
+  .balanceChip {
+    min-width: 78px;
+    padding-inline: 9px;
+  }
+
+  .balanceChip strong {
+    font-size: 12px;
+  }
+
   .tgNotice,
   .tgUserBar {
     margin-top: 8px;
