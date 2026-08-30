@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import Icon from "@/components/icon";
+import ListingMarketContext from "@/components/listing-market-context";
 import ProductImage from "@/components/product-image";
 import { useTelegramSession } from "@/components/telegram-session";
 import { getSupabasePublic } from "@/lib/supabase/public";
@@ -54,7 +55,7 @@ export default function ListingDetail({ id }: { id: string }) {
       setListing((current) => current && current.id === listing.id ? { ...current, views: current.views + 1 } : current);
     }).catch(() => undefined);
     return () => { active = false; };
-  }, [listing?.id, listing?.seller_id, session.state, session.profile?.id]);
+  }, [listing?.id, listing?.seller_id, session.state, session.profile?.id, session]);
 
   async function toggleFavorite() {
     if (session.state !== "verified") return session.openBot();
@@ -87,8 +88,8 @@ export default function ListingDetail({ id }: { id: string }) {
     if (!listing) return;
     if (session.state !== "verified") return session.openBot();
     setActionLoading(true); setMessage(null);
-    try { await session.callAction("create_offer", { listingId: id, amount: Number(offerAmount) }); setOfferOpen(false); setMessage("Предложение отправлено"); }
-    catch (reason) { const code = reason instanceof Error ? reason.message : "game_action_failed"; setMessage(code === "invalid_offer_amount" ? "Цена должна быть от 50% до 99% стоимости" : code === "insufficient_funds" ? "Недостаточно средств" : "Не удалось отправить предложение"); }
+    try { await session.callAction("create_offer", { listingId: id, amount: Number(offerAmount) }); setOfferOpen(false); setMessage("Предложение отправлено. У продавца будет 24 часа на ответ."); }
+    catch (reason) { const code = reason instanceof Error ? reason.message : "game_action_failed"; setMessage(code === "invalid_offer_amount" ? "Цена должна быть от 50% до 99% стоимости" : code === "insufficient_funds" ? "Недостаточно средств" : code === "counter_offer_pending" ? "Сначала ответь на встречное предложение в разделе сделок" : "Не удалось отправить предложение"); }
     finally { setActionLoading(false); }
   }
 
@@ -159,12 +160,14 @@ export default function ListingDetail({ id }: { id: string }) {
 
       <section className="flatRows">
         <div><span>Состояние</span><strong>{listing.condition}%</strong></div>
-        <div><span>Ориентир рынка</span><strong>{rubles(fair)}</strong></div>
+        <div><span>Базовый ориентир</span><strong>{rubles(fair)}</strong></div>
         <div><span>Просмотры</span><strong>{listing.views}</strong></div>
       </section>
 
+      <ListingMarketContext listingId={listing.id}/>
+
       <section className="flatSection flatHistory">
-        <h2>История цены</h2>
+        <h2>История рынка</h2>
         <Sparkline points={points}/>
       </section>
     </div>
