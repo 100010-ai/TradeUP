@@ -1,6 +1,8 @@
 .listingVisual,
 .flatListingVisual,
 .flatDetailImage,
+.flatInventoryImage,
+.flatSelectedImage,
 .productPhoto,
 .inventoryItemImage,
 .sellItemImage {
@@ -12,7 +14,9 @@
 }
 
 .listingVisual .productImageMedia,
-.flatListingVisual .productImageMedia {
+.flatListingVisual .productImageMedia,
+.flatInventoryImage .productImageMedia,
+.flatSelectedImage .productImageMedia {
   position: absolute !important;
   inset: 0 !important;
   width: 100% !important;
@@ -22,6 +26,12 @@
   object-position: center !important;
   transform: none !important;
   transition: none !important;
+}
+
+.flatInventoryImage,
+.flatSelectedImage {
+  flex: 0 0 auto;
+  min-width: 0;
 }
 
 .flatDetailImage .productImageMedia {
@@ -59,7 +69,11 @@
 .listingVisual::before,
 .listingVisual::after,
 .flatDetailImage::before,
-.flatDetailImage::after {
+.flatDetailImage::after,
+.flatInventoryImage::before,
+.flatInventoryImage::after,
+.flatSelectedImage::before,
+.flatSelectedImage::after {
   display: none !important;
   content: none !important;
 }
