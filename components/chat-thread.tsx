@@ -33,10 +33,9 @@ function dayLabel(value: string) {
 function presenceLabel(profile: Profile | null) {
   if (!profile) return "";
   if (profile.is_online) return "онлайн";
-  const ms = Date.now() - new Date(profile.last_seen_at).getTime();
-  if (ms < 10 * 60_000) return "был недавно";
-  if (ms < 60 * 60_000) return `был ${Math.max(1, Math.floor(ms / 60_000))} мин назад`;
-  return `был ${new Date(profile.last_seen_at).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}`;
+  const lastSeen = new Date(profile.last_seen_at);
+  if (Number.isNaN(lastSeen.getTime())) return "не в сети";
+  return `был ${lastSeen.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}`;
 }
 
 export default function ChatThread({ id }: { id: string }) {
