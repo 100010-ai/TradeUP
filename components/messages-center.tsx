@@ -15,7 +15,7 @@ type SystemChat = { id: "tradeup" | "support"; kind: string; title: string; subt
 type ThreadsResult = { profileId?: string; threads?: Thread[]; profiles?: ChatProfile[]; listings?: ChatListing[]; systemChats?: SystemChat[] };
 
 export default function MessagesCenter() {
-  const session = useTelegramSession();
+  const { state: sessionState, callChatAction, openBot } = useTelegramSession();
   const [threads, setThreads] = useState<Thread[]>([]);
   const [systemChats, setSystemChats] = useState<SystemChat[]>([]);
   const [profiles, setProfiles] = useState<ChatProfile[]>([]);
@@ -27,12 +27,12 @@ export default function MessagesCenter() {
   const loadInFlight = useRef(false);
 
   const load = useCallback(async (silent = false) => {
-    if (session.state !== "verified") { if (!silent) setLoading(false); return; }
+    if (sessionState !== "verified") { if (!silent) setLoading(false); return; }
     if (loadInFlight.current) return;
     loadInFlight.current = true;
     if (!silent) setLoading(true);
     try {
-      const result = await session.callChatAction("threads") as ThreadsResult;
+      const result = await callChatAction("threads") as ThreadsResult;
       setThreads(result.threads ?? []);
       setSystemChats(result.systemChats ?? []);
       setProfiles(result.profiles ?? []);
@@ -45,11 +45,11 @@ export default function MessagesCenter() {
       loadInFlight.current = false;
       if (!silent) setLoading(false);
     }
-  }, [session]);
+  }, [sessionState, callChatAction]);
 
   useEffect(() => {
-    if (session.state !== "verified") {
-      if (["browser", "unavailable", "error"].includes(session.state)) setLoading(false);
+    if (sessionState !== "verified") {
+      if (["browser", "unavailable", "error"].includes(sessionState)) setLoading(false);
       return;
     }
     const poll = () => { if (document.visibilityState === "visible") void load(true); };
@@ -60,7 +60,7 @@ export default function MessagesCenter() {
       window.clearInterval(timer);
       document.removeEventListener("visibilitychange", poll);
     };
-  }, [session.state, load]);
+  }, [sessionState, load]);
 
   const profileMap = useMemo(() => new Map(profiles.map((profile) => [profile.id, profile])), [profiles]);
   const listingMap = useMemo(() => new Map(listings.map((listing) => [listing.id, listing])), [listings]);
@@ -76,8 +76,8 @@ export default function MessagesCenter() {
     });
   }, [threads, normalized, profileId, profileMap, listingMap]);
 
-  if (session.state !== "verified" && !loading) {
-    return <div className="flatAuth"><Icon name="message" size={32}/><strong>Чаты доступны в Telegram</strong><button type="button" onClick={session.openBot}>Открыть TradeUP</button></div>;
+  if (sessionState !== "verified" && !loading) {
+    return <div className="flatAuth"><Icon name="message" size={32}/><strong>Чаты доступны в Telegram</strong><button type="button" onClick={openBot}>Открыть TradeUP</button></div>;
   }
 
   const nothing = !loading && !error && visibleSystems.length === 0 && visible.length === 0;
