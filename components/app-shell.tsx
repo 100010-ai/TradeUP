@@ -5,13 +5,20 @@ import { usePathname } from "next/navigation";
 import { useTelegramSession } from "@/components/telegram-session";
 import { rubles } from "@/lib/product";
 
-const navItems = [
+type NavItem = {
+  href: string;
+  label: string;
+  icon: string;
+  primary?: boolean;
+};
+
+const navItems: readonly NavItem[] = [
   { href: "/", label: "Рынок", icon: "⌂" },
   { href: "/favorites", label: "Избранное", icon: "♡" },
   { href: "/sell", label: "Продать", icon: "+", primary: true },
   { href: "/deals", label: "Сделки", icon: "⇄" },
   { href: "/profile", label: "Профиль", icon: "◉" },
-] as const;
+];
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
