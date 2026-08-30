@@ -1,0 +1,22 @@
+:root {
+  --guard-safe-top: max(var(--tradeup-guard-top, 0px), var(--tradeup-safe-top, 0px), var(--tg-content-safe-area-inset-top, 0px), var(--tg-safe-area-inset-top, 0px));
+  --guard-safe-right: max(var(--tradeup-guard-right, 0px), var(--tradeup-safe-right, 0px), var(--tg-content-safe-area-inset-right, 0px), var(--tg-safe-area-inset-right, 0px));
+  --guard-safe-bottom: max(var(--tradeup-guard-bottom, 0px), var(--tradeup-safe-bottom, 0px), var(--tg-content-safe-area-inset-bottom, 0px), var(--tg-safe-area-inset-bottom, 0px));
+  --guard-safe-left: max(var(--tradeup-guard-left, 0px), var(--tradeup-safe-left, 0px), var(--tg-content-safe-area-inset-left, 0px), var(--tg-safe-area-inset-left, 0px));
+}
+
+.appHeader {
+  height: calc(58px + var(--guard-safe-top)) !important;
+  padding-top: var(--guard-safe-top) !important;
+  padding-left: calc(14px + var(--guard-safe-left)) !important;
+  padding-right: calc(14px + var(--guard-safe-right)) !important;
+}
+.pageCanvas { padding-left: calc(14px + var(--guard-safe-left)) !important; padding-right: calc(14px + var(--guard-safe-right)) !important; }
+.flowCanvas { padding-left: var(--guard-safe-left) !important; padding-right: var(--guard-safe-right) !important; }
+.bottomBar { padding-bottom: calc(5px + var(--guard-safe-bottom)) !important; }
+.professionalChatHeader { min-height: calc(58px + var(--guard-safe-top)) !important; padding-top: var(--guard-safe-top) !important; padding-left: calc(7px + var(--guard-safe-left)) !important; padding-right: calc(9px + var(--guard-safe-right)) !important; }
+.chatListingStrip { padding-left: calc(10px + var(--guard-safe-left)) !important; padding-right: calc(10px + var(--guard-safe-right)) !important; }
+.professionalChatMessages { padding-left: calc(9px + var(--guard-safe-left)) !important; padding-right: calc(9px + var(--guard-safe-right)) !important; }
+.professionalComposer { padding-left: calc(9px + var(--guard-safe-left)) !important; padding-right: calc(9px + var(--guard-safe-right)) !important; padding-bottom: calc(8px + var(--guard-safe-bottom)) !important; }
+.systemChatHeader, .chatFlowHeader:not(.professionalChatHeader), .flatFlowHeader { padding-top: var(--guard-safe-top) !important; min-height: calc(52px + var(--guard-safe-top)) !important; }
+.notificationCenterHeader { padding-top: var(--guard-safe-top) !important; min-height: calc(56px + var(--guard-safe-top)) !important; }
