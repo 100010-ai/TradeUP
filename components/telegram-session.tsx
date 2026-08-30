@@ -3,6 +3,16 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { BOT_URL, BOT_USERNAME, type PlayerProfile, type SessionCounts, type TelegramUser } from "@/lib/product";
 
+export type PhoneNotification = {
+  id: string;
+  type: string;
+  title: string;
+  body: string;
+  href: string | null;
+  created_at: string;
+  read_at: string | null;
+};
+
 type SessionState = "checking" | "verified" | "browser" | "unavailable" | "error";
 type BootstrapPayload = { ok?: boolean; user?: TelegramUser; profile?: PlayerProfile; starterGranted?: number; counts?: SessionCounts; favoriteIds?: string[]; error?: string };
 type ActionResult = Record<string, unknown> & { ok?: boolean; error?: string; profile?: PlayerProfile };
@@ -17,12 +27,16 @@ type TelegramSessionContextValue = {
   favoriteIds: Set<string>;
   starterGranted: number;
   unreadChats: number;
+  unreadNotifications: number;
+  latestNotification: PhoneNotification | null;
   botUsername: string;
   botUrl: string;
   refresh: () => Promise<void>;
   refreshUnreadChats: () => Promise<void>;
+  refreshNotifications: () => Promise<void>;
   callAction: (action: string, payload?: Record<string, unknown>) => Promise<ActionResult>;
   callChatAction: (action: string, payload?: Record<string, unknown>) => Promise<ActionResult>;
+  callNotificationAction: (action: string, payload?: Record<string, unknown>) => Promise<ActionResult>;
   openBot: () => void;
 };
 
@@ -74,7 +88,10 @@ export function TelegramSessionProvider({ children }: { children: React.ReactNod
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
   const [starterGranted, setStarterGranted] = useState(0);
   const [unreadChats, setUnreadChats] = useState(0);
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const [latestNotification, setLatestNotification] = useState<PhoneNotification | null>(null);
   const unreadRequestInFlight = useRef(false);
+  const notificationRequestInFlight = useRef(false);
 
   const openBot = useCallback(() => { window.location.href = BOT_URL; }, []);
   const request = useCallback(async (url: string, action: string, payload: Record<string, unknown> = {}) => {
@@ -111,6 +128,20 @@ export function TelegramSessionProvider({ children }: { children: React.ReactNod
     finally { unreadRequestInFlight.current = false; }
   }, [request]);
 
+  const refreshNotifications = useCallback(async () => {
+    if (!getInitData() || notificationRequestInFlight.current) return;
+    notificationRequestInFlight.current = true;
+    try {
+      const result = await request("/api/notifications", "unread");
+      const unread = Number(result.unread);
+      if (Number.isFinite(unread)) setUnreadNotifications(Math.max(0, Math.floor(unread)));
+      const latest = result.latest;
+      if (latest && typeof latest === "object") setLatestNotification(latest as PhoneNotification);
+      else setLatestNotification(null);
+    } catch { /* notifications must never block the app */ }
+    finally { notificationRequestInFlight.current = false; }
+  }, [request]);
+
   const callAction = useCallback(async (action: string, payload: Record<string, unknown> = {}) => {
     const result = await request("/api/game", action, payload);
     if (result.profile) setProfile(result.profile);
@@ -133,6 +164,12 @@ export function TelegramSessionProvider({ children }: { children: React.ReactNod
     return result;
   }, [refreshUnreadChats, request]);
 
+  const callNotificationAction = useCallback(async (action: string, payload: Record<string, unknown> = {}) => {
+    const result = await request("/api/notifications", action, payload);
+    if (["mark_read", "mark_all"].includes(action)) void refreshNotifications();
+    return result;
+  }, [refreshNotifications, request]);
+
   useEffect(() => { void refresh(); }, [refresh]);
 
   useEffect(() => {
@@ -147,7 +184,11 @@ export function TelegramSessionProvider({ children }: { children: React.ReactNod
 
   useEffect(() => {
     if (state !== "verified") return;
-    const poll = () => { if (document.visibilityState === "visible") void refreshUnreadChats(); };
+    const poll = () => {
+      if (document.visibilityState !== "visible") return;
+      void refreshUnreadChats();
+      void refreshNotifications();
+    };
     poll();
     const timer = window.setInterval(poll, 30_000);
     document.addEventListener("visibilitychange", poll);
@@ -155,9 +196,9 @@ export function TelegramSessionProvider({ children }: { children: React.ReactNod
       window.clearInterval(timer);
       document.removeEventListener("visibilitychange", poll);
     };
-  }, [state, refreshUnreadChats]);
+  }, [state, refreshUnreadChats, refreshNotifications]);
 
-  const value = useMemo<TelegramSessionContextValue>(() => ({ state, user, profile, counts, favoriteIds, starterGranted, unreadChats, botUsername: BOT_USERNAME, botUrl: BOT_URL, refresh, refreshUnreadChats, callAction, callChatAction, openBot }), [state, user, profile, counts, favoriteIds, starterGranted, unreadChats, refresh, refreshUnreadChats, callAction, callChatAction, openBot]);
+  const value = useMemo<TelegramSessionContextValue>(() => ({ state, user, profile, counts, favoriteIds, starterGranted, unreadChats, unreadNotifications, latestNotification, botUsername: BOT_USERNAME, botUrl: BOT_URL, refresh, refreshUnreadChats, refreshNotifications, callAction, callChatAction, callNotificationAction, openBot }), [state, user, profile, counts, favoriteIds, starterGranted, unreadChats, unreadNotifications, latestNotification, refresh, refreshUnreadChats, refreshNotifications, callAction, callChatAction, callNotificationAction, openBot]);
   return <TelegramSessionContext.Provider value={value}>{children}</TelegramSessionContext.Provider>;
 }
 
