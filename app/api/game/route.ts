@@ -11,6 +11,7 @@ const allowedActions = new Set([
   "create_listing",
   "cancel_listing",
   "toggle_favorite",
+  "view_listing",
   "buy_listing",
   "create_offer",
   "cancel_offer",
