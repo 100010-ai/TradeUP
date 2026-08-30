@@ -6,6 +6,7 @@ import "./product-plus.css";
 import "./dark-redesign.css";
 import "./avito-flat.css";
 import "./flat-extras.css";
+import "./no-panels.css";
 
 export const metadata: Metadata = {
   title: { default: "TradeUP", template: "%s · TradeUP" },
@@ -21,7 +22,7 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   viewportFit: "cover",
-  themeColor: "#11110f",
+  themeColor: "#0f0f0e",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

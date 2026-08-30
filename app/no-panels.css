@@ -1,0 +1,113 @@
+/* TradeUP no-panels pass: continuous surfaces, rows and separators only. */
+:root {
+  --bg: #0f0f0e;
+  --line: #292823;
+  --text: #f4f2eb;
+  --muted: #96938b;
+  --accent: #f2c85b;
+}
+
+/* Header is a line, never a panel. */
+.appHeader { height:56px !important; padding:0 14px !important; background:var(--bg) !important; backdrop-filter:none !important; }
+.headerActions { gap:12px !important; }
+.balanceButton,.connectButton { min-height:auto !important; padding:0 !important; background:transparent !important; border:0 !important; border-radius:0 !important; color:var(--text) !important; }
+.balanceButton strong { font-size:12px !important; }
+.avatarButton { width:32px !important; height:32px !important; background:transparent !important; }
+.sessionStrip { background:transparent !important; }
+
+/* Bottom nav is five equal text/icon items. No floating action puck. */
+.bottomBar { height:62px !important; padding:3px 5px calc(4px + env(safe-area-inset-bottom)) !important; background:var(--bg) !important; backdrop-filter:none !important; }
+.bottomItem { min-height:52px !important; border-radius:0 !important; gap:2px !important; }
+.sellNav .bottomIcon { width:26px !important; height:25px !important; margin-top:0 !important; border-radius:0 !important; background:transparent !important; color:inherit !important; box-shadow:none !important; }
+.bottomItem.active { border-top:2px solid var(--accent); }
+
+/* Search is one field line. Sort is a plain icon action. */
+.marketSearchRow { gap:0 !important; border-bottom:1px solid var(--line); }
+.flatSearch { height:47px !important; padding:0 5px !important; border:0 !important; border-radius:0 !important; background:transparent !important; }
+.flatSort { position:relative; width:46px; height:47px; min-width:46px; padding:0 !important; border:0 !important; border-radius:0 !important; background:transparent !important; justify-content:center; }
+.flatSort select { position:absolute !important; inset:0 !important; width:100% !important; height:100% !important; opacity:0 !important; cursor:pointer; }
+
+/* Categories are tabs, not chips. */
+.flatCategoryRail { gap:20px !important; margin-top:0 !important; padding-top:2px !important; padding-bottom:0 !important; border-bottom:1px solid var(--line); }
+.flatCategory { height:43px !important; padding:0 !important; border:0 !important; border-radius:0 !important; background:transparent !important; color:#8f8c84 !important; gap:5px !important; position:relative; }
+.flatCategory span { display:none !important; }
+.flatCategory b { font-size:11px; white-space:nowrap; }
+.flatCategory.active { color:var(--text) !important; background:transparent !important; }
+.flatCategory.active::after { content:""; position:absolute; left:0; right:0; bottom:-1px; height:2px; background:var(--accent); }
+.flatFeedHead { margin:15px 0 5px !important; min-height:32px; }
+.flatFeedHead h1 { font-size:17px !important; }
+
+/* Market becomes a single list. Items have no card background, radius or outer box. */
+.flatGrid { display:block !important; }
+.flatListingCard { min-height:122px !important; padding:10px 0 !important; display:grid !important; grid-template-columns:112px minmax(0,1fr) !important; gap:12px !important; border-bottom:1px solid var(--line) !important; border-radius:0 !important; background:transparent !important; }
+.flatListingVisual { width:112px !important; height:102px !important; aspect-ratio:auto !important; border-radius:6px !important; background:#181816 !important; }
+.flatDealBadge { top:5px !important; left:5px !important; border-radius:3px !important; padding:3px 5px !important; }
+.flatListingContent { min-width:0; padding:1px 0 !important; display:flex; flex-direction:column; align-items:flex-start; }
+.flatListingContent .listingPrice { order:1; font-size:17px !important; }
+.flatListingContent .listingCardTitle { order:2; max-width:100%; margin-top:5px !important; font-size:13px !important; font-weight:700; }
+.flatListingContent .listingSubtitle { order:3; margin-top:5px !important; font-size:10px !important; }
+.flatListingContent .listingTime { order:4; margin-top:auto !important; font-size:9px !important; }
+.flatSkeleton { min-height:110px !important; margin:0 !important; border-radius:0 !important; border-bottom:1px solid var(--line) !important; background:linear-gradient(100deg,#11110f 20%,#191815 40%,#11110f 60%) !important; }
+
+/* Listing detail: no floating circles, no block backgrounds. */
+.flatDetailTop a,.flatIconButton { width:38px !important; height:38px !important; border-radius:0 !important; background:transparent !important; }
+.flatDetailImage { background:#161614 !important; }
+.flatPriceLine>span { padding:0 !important; border-radius:0 !important; background:transparent !important; }
+.flatPrimaryActions { border-top:1px solid var(--line); border-bottom:1px solid var(--line); gap:0 !important; margin-top:16px !important; }
+.flatPrimaryActions button { min-height:48px !important; border-radius:0 !important; background:transparent !important; }
+.flatPrimaryActions button + button { border-left:1px solid var(--line) !important; }
+.flatBuy { color:var(--accent) !important; }
+.flatChatButton { color:var(--text) !important; }
+.flatOfferForm,.flatNotice { border-radius:0 !important; background:transparent !important; }
+.flatNotice { padding:9px 0 !important; border-top:1px solid #4a3f21; border-bottom:1px solid #4a3f21; }
+.flatMoneyInput input { border-width:0 0 1px !important; border-radius:0 !important; background:transparent !important; padding-left:0 !important; }
+.flatQuickPrices button { padding:7px 9px !important; border-radius:0 !important; background:transparent !important; border-bottom:1px solid var(--line) !important; }
+.flatSubmit { border-radius:0 !important; }
+
+/* Sell/create: pure rows and fields. */
+.flatInventoryImage,.flatSelectedImage { border-radius:5px !important; }
+.flatRowPrimary { padding:8px 0 !important; border-radius:0 !important; background:transparent !important; color:var(--accent) !important; }
+.flatFlowBottom { background:var(--bg) !important; }
+.flatFlowBottom button { border-radius:0 !important; }
+.flatFormField input,.flatFormField textarea { border-radius:0 !important; }
+.flatAuth button { border-radius:0 !important; }
+
+/* Messages list is continuous. Only message bubbles retain shape because it is semantic chat UI. */
+.messageSearch { height:43px !important; margin:0 0 6px !important; padding:0 3px !important; border-radius:0 !important; border-bottom:1px solid var(--line); background:transparent !important; }
+.messageThumb,.chatProductThumb { border-radius:5px !important; }
+.chatComposer textarea { border-width:0 0 1px !important; border-radius:0 !important; background:transparent !important; }
+.chatComposer button { width:38px !important; height:38px !important; border-radius:0 !important; background:transparent !important; color:var(--accent) !important; }
+
+/* Profile is intentionally just content + separators. */
+.flatProfileAvatar { background:transparent !important; }
+.flatBalance,.flatProfileStats,.flatProfileMenu,.flatProfileMenu>a { background:transparent !important; }
+
+/* Legacy screens: kill any remaining container language from old CSS. */
+.heroPanel,.marketSummary,.summaryTile,.searchPanel,.categoryStrip,.sortPanel,
+.collectionCard,.inventoryCard,.inventoryItem,.activeListingCard,.sellForm,.sellCard,
+.emptyPanel,.authGate,.walletCard,.rankCard,.profileHeroCard,.infoCard,.offerCard,
+.leaderList,.podiumCard,.dealCard,.dealSummaryGrid>div,.profileStatsGrid>div,
+.listingDetailCard,.listingInfoCard,.sellerCard,.historyCard,.actionCard {
+  background:transparent !important;
+  border-radius:0 !important;
+  box-shadow:none !important;
+  border-left:0 !important;
+  border-right:0 !important;
+}
+
+.collectionCard,.inventoryCard,.inventoryItem,.activeListingCard,.sellForm,.sellCard,
+.emptyPanel,.authGate,.walletCard,.rankCard,.profileHeroCard,.infoCard,.offerCard,
+.leaderList,.podiumCard,.dealCard,.listingDetailCard,.listingInfoCard,.sellerCard,.historyCard,.actionCard {
+  border-top:1px solid var(--line) !important;
+  border-bottom:1px solid var(--line) !important;
+}
+
+.primaryAction,.secondaryAction,.dangerAction,.offerAction,.buyAction {
+  border-radius:0 !important;
+  box-shadow:none !important;
+}
+
+@media (max-width:480px) {
+  .flatListingCard { grid-template-columns:104px minmax(0,1fr) !important; min-height:116px !important; }
+  .flatListingVisual { width:104px !important; height:96px !important; }
+}
