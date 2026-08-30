@@ -5,7 +5,7 @@ import { validateTelegramRequest } from "@/lib/telegram/server-game";
 export const runtime = "nodejs";
 
 const allowedActions = new Set([
-  "threads", "start_thread", "open_thread", "send_message", "mark_read",
+  "threads", "unread_count", "start_thread", "open_thread", "poll_thread", "send_message", "mark_read",
   "open_system_chat", "support_choose_topic", "support_request_human", "support_send_message",
 ]);
 
