@@ -1,0 +1,12 @@
+create index if not exists auctions_high_bidder_id_idx on public.auctions(high_bidder_id);
+create index if not exists auctions_seller_id_idx on public.auctions(seller_id);
+create index if not exists bundle_sales_seller_id_idx on public.bundle_sales(seller_id);
+create index if not exists collection_entries_item_type_id_idx on public.collection_entries(item_type_id);
+create index if not exists flip_chain_steps_chain_id_idx on public.flip_chain_steps(chain_id);
+create index if not exists item_events_actor_id_idx on public.item_events(actor_id);
+create index if not exists item_events_counterparty_id_idx on public.item_events(counterparty_id);
+create index if not exists market_highlights_item_id_idx on public.market_highlights(item_id);
+create index if not exists market_highlights_profile_id_idx on public.market_highlights(profile_id);
+create index if not exists market_highlights_trade_id_idx on public.market_highlights(trade_id);
+create index if not exists profile_season_stats_profile_id_idx on public.profile_season_stats(profile_id);
+create index if not exists trade_ratings_rater_id_idx on public.trade_ratings(rater_id);
