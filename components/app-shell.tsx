@@ -1,8 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Icon, { type IconName } from "@/components/icon";
+import NotificationLayer from "@/components/notification-layer";
 import { useTelegramSession } from "@/components/telegram-session";
 import { rubles } from "@/lib/product";
 
@@ -19,14 +21,21 @@ const navItems: readonly NavItem[] = [
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const session = useTelegramSession();
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const initial = session.user?.first_name?.trim().charAt(0).toUpperCase() || "T";
   const flowMode = pathname.startsWith("/messages/") || pathname.startsWith("/sell/new");
 
   return (
     <div className={`appRoot ${flowMode ? "flowMode" : ""}`}>
+      <NotificationLayer open={notificationsOpen} onClose={() => setNotificationsOpen(false)} />
+
       {!flowMode && <header className="appHeader">
         <Link prefetch={false} href="/" className="brandLockup" aria-label="TradeUP"><span className="brandWord">Trade</span><span className="brandUp">UP</span></Link>
         <div className="headerActions">
+          {session.state === "verified" && <button type="button" className="notificationBell" aria-label="Уведомления" onClick={() => setNotificationsOpen(true)}>
+            <Icon name="bell" size={20}/>
+            {session.unreadNotifications > 0 && <i>{Math.min(session.unreadNotifications, 9)}</i>}
+          </button>}
           {session.profile ? <Link prefetch={false} href="/profile" className="balanceButton"><strong>{rubles(session.profile.balance)}</strong></Link> : <button className="connectButton" type="button" onClick={session.openBot}>{session.state === "checking" ? "..." : "Войти"}</button>}
           <Link prefetch={false} href="/profile" className="avatarButton" aria-label="Профиль">{session.profile?.photo_url ? <img src={session.profile.photo_url} alt="" decoding="async" /> : <span>{initial}</span>}</Link>
         </div>
