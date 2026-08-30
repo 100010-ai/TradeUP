@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import Icon from "@/components/icon";
 import { getSupabasePublic } from "@/lib/supabase/public";
@@ -24,7 +25,7 @@ export default function LeaderboardCenter() {
     <div className="pageHeadline"><div><span className="sectionEyebrow">Рейтинг</span><h1>Топ перекупов</h1><p>Места определяются реальной прибылью с завершённых продаж.</p></div></div>
     {loading && <div className="leaderboardSkeleton" />}
     {error && <div className="actionMessage">{error}</div>}
-    {!loading && !error && rows.length === 0 && <div className="emptyPanel"><div className="emptySymbol"><Icon name="trophy" /></div><h3>Рейтинг пока пуст</h3><p>Первая завершённая перепродажа откроет таблицу игроков.</p><a href="/" className="primaryAction">На рынок</a></div>}
+    {!loading && !error && rows.length === 0 && <div className="emptyPanel"><div className="emptySymbol"><Icon name="trophy" /></div><h3>Рейтинг пока пуст</h3><p>Первая завершённая перепродажа откроет таблицу игроков.</p><Link href="/" className="primaryAction">На рынок</Link></div>}
     {!loading && topThree.length > 0 && <section className="podiumGrid">{topThree.map((player, index) => <article className={`podiumCard place-${index + 1}`} key={player.id}><div className="podiumPlace">#{player.rank}</div><div className="podiumAvatar">{player.photo_url ? <img src={player.photo_url} alt="" /> : player.first_name.charAt(0).toUpperCase()}</div><h2>{player.first_name}</h2><p>{player.username ? `@${player.username}` : sellerLevel(player.rating)}</p><strong>{rubles(player.total_profit)}</strong><div className="podiumMeta"><span className="leaderRating"><Icon name="star" size={10} />{player.rating}</span><span>{player.deals_count} сделок</span></div></article>)}</section>}
     {!loading && rest.length > 0 && <section className="leaderList"><div className="leaderListHead"><span>Место</span><span>Игрок</span><span>Рейтинг</span><span>Сделки</span><span>Прибыль</span></div>{rest.map((player) => <article className="leaderRow" key={player.id}><strong className="leaderRank">#{player.rank}</strong><div className="leaderPerson"><div className="leaderAvatar">{player.photo_url ? <img src={player.photo_url} alt="" /> : player.first_name.charAt(0).toUpperCase()}</div><div><strong>{player.first_name}</strong><small>{player.username ? `@${player.username}` : sellerLevel(player.rating)}</small></div></div><span className="leaderRating"><Icon name="star" size={10} />{player.rating}</span><span>{player.deals_count}</span><strong className={Number(player.total_profit) >= 0 ? "profitPositive" : "profitNegative"}>{rubles(player.total_profit)}</strong></article>)}</section>}
     {!loading && rows.length > 0 && <p className="leaderboardNote">Сортировка: чистая прибыль, затем число сделок и рейтинг.</p>}
