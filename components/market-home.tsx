@@ -5,7 +5,7 @@ import Icon, { categoryIconName } from "@/components/icon";
 import ListingCard from "@/components/listing-card";
 import { categoryMeta, type MarketCardListing } from "@/lib/product";
 
-type Category = { id: string; name: string; sort_order: number };
+type Category = { id: string; name: string };
 type SortMode = "new" | "cheap" | "deal";
 
 const CARD_COLUMNS = "id,title,price,created_at,condition,item_name,brand,category_id,base_value,image_url";
@@ -13,6 +13,14 @@ const MARKET_LIMIT = 96;
 const PAGE_SIZE = 24;
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "") ?? "";
 const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? "";
+const CATEGORIES: readonly Category[] = [
+  { id: "phones", name: "Смартфоны" },
+  { id: "computers", name: "Компьютеры" },
+  { id: "consoles", name: "Консоли" },
+  { id: "sneakers", name: "Кроссовки" },
+  { id: "watches", name: "Часы" },
+  { id: "collectibles", name: "Коллекционное" },
+];
 
 async function publicRest<T>(path: string): Promise<T> {
   if (!SUPABASE_URL || !SUPABASE_KEY) throw new Error("Supabase не настроен");
@@ -25,7 +33,6 @@ async function publicRest<T>(path: string): Promise<T> {
 }
 
 export default function MarketHome() {
-  const [categories, setCategories] = useState<Category[]>([]);
   const [listings, setListings] = useState<MarketCardListing[]>([]);
   const [query, setQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState("all");
@@ -33,11 +40,6 @@ export default function MarketHome() {
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const loadCategories = useCallback(async () => {
-    const data = await publicRest<Category[]>("categories?select=id,name,sort_order&order=sort_order.asc");
-    setCategories(data);
-  }, []);
 
   const loadListings = useCallback(async () => {
     const select = encodeURIComponent(CARD_COLUMNS);
@@ -62,7 +64,7 @@ export default function MarketHome() {
     const onVisibility = () => { if (document.visibilityState === "visible") scheduleReload(); };
     document.addEventListener("visibilitychange", onVisibility);
 
-    void Promise.all([loadCategories(), loadListings()])
+    void loadListings()
       .then(async () => {
         if (!active) return;
         setError(null);
@@ -93,7 +95,7 @@ export default function MarketHome() {
       document.removeEventListener("visibilitychange", onVisibility);
       disposeRealtime?.();
     };
-  }, [loadCategories, loadListings]);
+  }, [loadListings]);
 
   const visibleListings = useMemo(() => {
     const normalized = query.trim().toLocaleLowerCase("ru");
@@ -133,13 +135,13 @@ export default function MarketHome() {
         <button type="button" className={activeCategory === "all" ? "flatCategory active" : "flatCategory"} onClick={() => { setActiveCategory("all"); setVisibleCount(PAGE_SIZE); }}>
           <span><Icon name="grid" size={19} /></span><b>Все</b>
         </button>
-        {categories.map((category) => {
+        {CATEGORIES.map((category) => {
           const meta = categoryMeta[category.id] ?? { short: category.name };
           return <button key={category.id} type="button" className={activeCategory === category.id ? "flatCategory active" : "flatCategory"} onClick={() => { setActiveCategory(category.id); setVisibleCount(PAGE_SIZE); }}><span><Icon name={categoryIconName(category.id)} size={19} /></span><b>{meta.short}</b></button>;
         })}
       </nav>
 
-      <div className="flatFeedHead"><h1>{activeCategory === "all" ? "Объявления" : categories.find((item) => item.id === activeCategory)?.name ?? "Объявления"}</h1><span>{visibleListings.length}</span></div>
+      <div className="flatFeedHead"><h1>{activeCategory === "all" ? "Объявления" : CATEGORIES.find((item) => item.id === activeCategory)?.name ?? "Объявления"}</h1><span>{visibleListings.length}</span></div>
 
       {loading && <div className="listingGridProduct flatGrid">{Array.from({ length: 6 }).map((_, index) => <div className="listingSkeleton flatSkeleton" key={index} />)}</div>}
       {!loading && error && <div className="flatEmpty"><Icon name="info" size={30} /><strong>Не удалось загрузить</strong><span>{error}</span></div>}
