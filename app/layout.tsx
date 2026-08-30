@@ -7,6 +7,7 @@ import "./dark-redesign.css";
 import "./avito-flat.css";
 import "./flat-extras.css";
 import "./no-panels.css";
+import "./product-grid.css";
 
 export const metadata: Metadata = {
   title: { default: "TradeUP", template: "%s · TradeUP" },

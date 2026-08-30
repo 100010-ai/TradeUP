@@ -1,0 +1,108 @@
+/* Product tiles are the only card-like element. The tile itself stays transparent. */
+.flatGrid {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 20px 10px !important;
+}
+
+.flatListingCard {
+  min-height: 0 !important;
+  padding: 0 !important;
+  display: block !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  text-decoration: none !important;
+}
+
+.flatListingVisual {
+  width: 100% !important;
+  height: auto !important;
+  aspect-ratio: 1 / 1 !important;
+  border: 0 !important;
+  border-radius: 9px !important;
+  background: transparent !important;
+  overflow: hidden !important;
+}
+
+.flatListingVisual .productImageMedia {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  display: block !important;
+}
+
+.flatListingVisual .productImageFallback {
+  width: 100% !important;
+  height: 100% !important;
+  display: grid !important;
+  place-items: center !important;
+  background: #171715 !important;
+  color: #66635c !important;
+}
+
+.flatListingContent {
+  min-width: 0 !important;
+  padding: 7px 1px 0 !important;
+  display: block !important;
+}
+
+.flatListingContent .listingPrice {
+  margin: 0 !important;
+  font-size: 16px !important;
+  line-height: 1.15 !important;
+  font-weight: 900 !important;
+  letter-spacing: -.035em !important;
+}
+
+.flatListingContent .listingCardTitle {
+  margin-top: 3px !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  font-size: 12px !important;
+  line-height: 1.3 !important;
+  font-weight: 650 !important;
+  color: #e8e5dd !important;
+}
+
+.flatListingContent .listingSubtitle {
+  margin-top: 3px !important;
+  font-size: 9px !important;
+  color: #858179 !important;
+}
+
+.flatListingContent .listingTime {
+  margin-top: 2px !important;
+  font-size: 8px !important;
+  color: #65625c !important;
+}
+
+.flatDealBadge {
+  top: 6px !important;
+  left: 6px !important;
+  padding: 3px 5px !important;
+  border-radius: 4px !important;
+}
+
+.flatSkeleton {
+  min-height: 0 !important;
+  aspect-ratio: 1 / 1.22 !important;
+  margin: 0 !important;
+  border: 0 !important;
+  border-radius: 9px !important;
+  background: linear-gradient(100deg,#121210 20%,#1a1916 40%,#121210 60%) !important;
+  background-size: 220% 100% !important;
+}
+
+@media (min-width: 640px) {
+  .flatGrid { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; gap: 24px 14px !important; }
+}
+
+@media (max-width: 480px) {
+  .flatGrid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 18px 8px !important; }
+  .flatListingContent .listingPrice { font-size: 15px !important; }
+  .flatListingContent .listingCardTitle { font-size: 11px !important; }
+}
