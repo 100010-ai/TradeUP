@@ -6,6 +6,7 @@ export const runtime = "nodejs";
 type Update = {
   pre_checkout_query?: { id?: string; from?: { id?: number }; currency?: string; total_amount?: number; invoice_payload?: string };
   message?: {
+    from?: { id?: number };
     chat?: { id?: number };
     text?: string;
     successful_payment?: { currency?: string; total_amount?: number; invoice_payload?: string; telegram_payment_charge_id?: string };
@@ -73,7 +74,7 @@ export async function POST(request: Request) {
   const payment = update.message?.successful_payment;
   if (payment && payment.currency === "XTR") {
     const invoicePayload = payment.invoice_payload ?? "";
-    const telegramUserId = Number(update.message?.chat?.id);
+    const telegramUserId = Number(update.message?.from?.id ?? update.message?.chat?.id);
     const starsAmount = Number(payment.total_amount);
     const chargeId = payment.telegram_payment_charge_id ?? "";
     if (invoicePayload && chargeId && Number.isSafeInteger(telegramUserId) && Number.isInteger(starsAmount)) {
@@ -81,8 +82,8 @@ export async function POST(request: Request) {
       if (confirmed.body.ok) {
         await botCall(botToken, "sendMessage", {
           chat_id: telegramUserId,
-          text: "Покупка в TradeUP подтверждена. Косметика уже добавлена в твой профиль.",
-          reply_markup: { inline_keyboard: [[{ text: "Открыть TradeUP", web_app: { url: new URL("/?startapp=profile", request.url).origin } }]] },
+          text: "Покупка в TradeUP подтверждена. Косметика уже добавлена в твою коллекцию.",
+          reply_markup: { inline_keyboard: [[{ text: "Открыть оформление", web_app: { url: new URL("/store", request.url).toString() } }]] },
         });
       }
     }
