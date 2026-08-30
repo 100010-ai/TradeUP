@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import Icon, { categoryIconName } from "@/components/icon";
 import ListingCard from "@/components/listing-card";
 import { getSupabasePublic } from "@/lib/supabase/public";
 import { categoryMeta, type MarketListing } from "@/lib/product";
@@ -23,19 +24,16 @@ export default function MarketHome() {
 
   async function loadMarket() {
     if (!supabase) throw new Error("Supabase не настроен в Vercel");
-
     const [categoriesResult, listingsResult, listingsCount, onlinePlayers] = await Promise.all([
       supabase.from("categories").select("id,name,sort_order").order("sort_order"),
       supabase.from("market_listings").select("*").order("created_at", { ascending: false }).limit(100),
       supabase.from("market_listings").select("id", { count: "exact", head: true }),
       supabase.from("profile_cards").select("id", { count: "exact", head: true }).eq("is_online", true),
     ]);
-
     if (categoriesResult.error) throw categoriesResult.error;
     if (listingsResult.error) throw listingsResult.error;
     if (listingsCount.error) throw listingsCount.error;
     if (onlinePlayers.error) throw onlinePlayers.error;
-
     setCategories(categoriesResult.data ?? []);
     setListings((listingsResult.data ?? []) as unknown as MarketListing[]);
     setActiveCount(listingsCount.count ?? 0);
@@ -44,87 +42,72 @@ export default function MarketHome() {
 
   useEffect(() => {
     let active = true;
-    void loadMarket()
-      .catch((reason: unknown) => {
-        if (active) setError(reason instanceof Error ? reason.message : "Не удалось загрузить рынок");
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
-
+    void loadMarket().catch((reason: unknown) => {
+      if (active) setError(reason instanceof Error ? reason.message : "Не удалось загрузить рынок");
+    }).finally(() => active && setLoading(false));
     if (!supabase) return () => { active = false; };
-
-    const channel = supabase
-      .channel("tradeup-market-ui")
-      .on("postgres_changes", { event: "*", schema: "public", table: "listings" }, () => {
-        void loadMarket().catch(() => undefined);
-      })
-      .subscribe();
-
-    return () => {
-      active = false;
-      void supabase.removeChannel(channel);
-    };
+    const channel = supabase.channel("tradeup-market-ui").on("postgres_changes", { event: "*", schema: "public", table: "listings" }, () => {
+      void loadMarket().catch(() => undefined);
+    }).subscribe();
+    return () => { active = false; void supabase.removeChannel(channel); };
   }, [supabase]);
 
   const visibleListings = useMemo(() => {
     const normalized = query.trim().toLocaleLowerCase("ru");
     const filtered = listings.filter((listing) => {
       const matchesCategory = activeCategory === "all" || listing.category_id === activeCategory;
-      const matchesQuery = !normalized || `${listing.title} ${listing.brand ?? ""} ${listing.item_name}`
-        .toLocaleLowerCase("ru")
-        .includes(normalized);
+      const matchesQuery = !normalized || `${listing.title} ${listing.brand ?? ""} ${listing.item_name}`.toLocaleLowerCase("ru").includes(normalized);
       return matchesCategory && matchesQuery;
     });
-
     return [...filtered].sort((a, b) => {
       if (sortMode === "cheap") return Number(a.price) - Number(b.price);
-      if (sortMode === "deal") {
-        const aScore = Number(a.price) / Math.max(1, Number(a.base_value));
-        const bScore = Number(b.price) / Math.max(1, Number(b.base_value));
-        return aScore - bScore;
-      }
+      if (sortMode === "deal") return Number(a.price) / Math.max(1, Number(a.base_value)) - Number(b.price) / Math.max(1, Number(b.base_value));
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
   }, [listings, query, activeCategory, sortMode]);
 
+  const activeName = activeCategory === "all" ? "Все предложения" : categories.find((item) => item.id === activeCategory)?.name ?? "Категория";
+
   return (
     <>
-      <section className="marketHero">
-        <div className="marketHeroCopy">
-          <span className="heroTag">Онлайн-перекупство</span>
-          <h1>Поймай цену.<br />Забери маржу.</h1>
-          <p>Рынок создают сами игроки. Никаких системных продавцов и нарисованных сделок.</p>
+      <section className="marketIntro">
+        <div>
+          <span className="sectionEyebrow">TradeUP Market</span>
+          <h1>Рынок</h1>
+          <p>Живые лоты игроков, без системных продавцов.</p>
         </div>
-        <div className="marketPulseCard">
-          <div><strong>{activeCount}</strong><span>лотов сейчас</span></div>
-          <div><strong>{onlineCount}</strong><span>игроков онлайн</span></div>
-          <Link href="/sell">Выставить товар</Link>
+        <div className="marketIntroRight">
+          <div className="marketMetric"><strong>{activeCount}</strong><span>лотов</span></div>
+          <div className="marketMetric"><strong>{onlineCount}</strong><span>онлайн</span></div>
+          <Link href="/sell" className="quickSell" aria-label="Продать"><Icon name="plus" size={21} /></Link>
         </div>
       </section>
 
       <section className="marketToolbar">
         <label className="marketSearch">
-          <span>⌕</span>
-          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Найти iPhone, консоль, кроссовки…" />
-          {query && <button type="button" onClick={() => setQuery("")}>×</button>}
+          <span><Icon name="search" size={19} /></span>
+          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Поиск по рынку" />
+          {query && <button type="button" onClick={() => setQuery("")} aria-label="Очистить"><Icon name="close" size={15} /></button>}
         </label>
-        <select value={sortMode} onChange={(event) => setSortMode(event.target.value as SortMode)} aria-label="Сортировка">
-          <option value="new">Сначала новые</option>
-          <option value="cheap">Сначала дешевле</option>
-          <option value="deal">Самые выгодные</option>
-        </select>
+        <label className="sortButton" aria-label="Сортировка">
+          <Icon name="filter" size={19} />
+          <select value={sortMode} onChange={(event) => setSortMode(event.target.value as SortMode)}>
+            <option value="new">Сначала новые</option>
+            <option value="cheap">Сначала дешевле</option>
+            <option value="deal">Самые выгодные</option>
+          </select>
+        </label>
       </section>
 
       <nav className="categoryRail" aria-label="Категории">
         <button type="button" className={activeCategory === "all" ? "categoryTile active" : "categoryTile"} onClick={() => setActiveCategory("all")}>
-          <span>✦</span><strong>Все</strong>
+          <span><Icon name="grid" size={17} /></span><strong>Все</strong>
         </button>
         {categories.map((category) => {
-          const meta = categoryMeta[category.id] ?? { icon: "📦", short: category.name };
+          const meta = categoryMeta[category.id] ?? { short: category.name, icon: "" };
           return (
             <button key={category.id} type="button" className={activeCategory === category.id ? "categoryTile active" : "categoryTile"} onClick={() => setActiveCategory(category.id)}>
-              <span>{meta.icon}</span><strong>{meta.short}</strong>
+              <span><Icon name={categoryIconName(category.id)} size={17} /></span><strong>{meta.short}</strong>
             </button>
           );
         })}
@@ -132,44 +115,20 @@ export default function MarketHome() {
 
       <section className="feedSection">
         <div className="sectionTitleRow">
-          <div>
-            <span className="sectionEyebrow">Рынок</span>
-            <h2>{activeCategory === "all" ? "Свежие предложения" : categories.find((item) => item.id === activeCategory)?.name ?? "Категория"}</h2>
-          </div>
+          <div><span className="sectionEyebrow">Рынок</span><h2>{activeName}</h2></div>
           <span className="liveStatus"><i /> LIVE</span>
         </div>
 
-        {loading && (
-          <div className="listingGridProduct">
-            {Array.from({ length: 6 }).map((_, index) => <div className="listingSkeleton" key={index} />)}
-          </div>
-        )}
-
-        {!loading && error && (
-          <div className="emptyPanel errorPanel">
-            <div className="emptySymbol">!</div>
-            <h3>Рынок не загрузился</h3>
-            <p>{error}</p>
-          </div>
-        )}
-
+        {loading && <div className="listingGridProduct">{Array.from({ length: 6 }).map((_, index) => <div className="listingSkeleton" key={index} />)}</div>}
+        {!loading && error && <div className="emptyPanel errorPanel"><div className="emptySymbol"><Icon name="info" /></div><h3>Рынок не загрузился</h3><p>{error}</p></div>}
         {!loading && !error && visibleListings.length === 0 && (
           <div className="emptyPanel launchPanel">
-            <div className="emptySymbol">↗</div>
-            <div>
-              <span className="sectionEyebrow">Старт рынка</span>
-              <h3>{listings.length === 0 ? "Будь первым продавцом" : "По фильтру ничего нет"}</h3>
-              <p>{listings.length === 0 ? "После входа ты получишь стартовый инвентарь. Выстави первый реальный лот и задай цену рынку." : "Попробуй другую категорию или убери часть запроса."}</p>
-            </div>
-            {listings.length === 0 ? <Link href="/sell" className="primaryAction">Открыть инвентарь</Link> : <button className="primaryAction" type="button" onClick={() => { setQuery(""); setActiveCategory("all"); }}>Сбросить фильтры</button>}
+            <div className="emptySymbol"><Icon name={listings.length === 0 ? "tag" : "search"} /></div>
+            <div><span className="sectionEyebrow">{listings.length === 0 ? "Старт рынка" : "Ничего не найдено"}</span><h3>{listings.length === 0 ? "Выстави первый лот" : "Попробуй другой фильтр"}</h3><p>{listings.length === 0 ? "После входа стартовый инвентарь можно сразу отправить на рынок." : "Сбрось категорию или измени запрос."}</p></div>
+            {listings.length === 0 ? <Link href="/sell" className="primaryAction">Открыть инвентарь</Link> : <button className="primaryAction" type="button" onClick={() => { setQuery(""); setActiveCategory("all"); }}>Сбросить</button>}
           </div>
         )}
-
-        {!loading && !error && visibleListings.length > 0 && (
-          <div className="listingGridProduct">
-            {visibleListings.map((listing) => <ListingCard listing={listing} key={listing.id} />)}
-          </div>
-        )}
+        {!loading && !error && visibleListings.length > 0 && <div className="listingGridProduct">{visibleListings.map((listing) => <ListingCard listing={listing} key={listing.id} />)}</div>}
       </section>
     </>
   );

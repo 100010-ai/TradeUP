@@ -47,11 +47,7 @@ export type TelegramUser = {
   photo_url?: string;
 };
 
-export type SessionCounts = {
-  inventory: number;
-  listings: number;
-  favorites: number;
-};
+export type SessionCounts = { inventory: number; listings: number; favorites: number };
 
 export type InventoryItem = {
   id: string;
@@ -83,13 +79,13 @@ export type LiveInventoryListing = {
 export const BOT_USERNAME = "TradeUpGame_Bot";
 export const BOT_URL = `https://t.me/${BOT_USERNAME}?startapp=market`;
 
-export const categoryMeta: Record<string, { icon: string; short: string }> = {
-  phones: { icon: "📱", short: "Смартфоны" },
-  computers: { icon: "💻", short: "Техника" },
-  consoles: { icon: "🎮", short: "Консоли" },
-  sneakers: { icon: "👟", short: "Кроссовки" },
-  watches: { icon: "⌚", short: "Часы" },
-  collectibles: { icon: "🃏", short: "Коллекционное" },
+export const categoryMeta: Record<string, { short: string }> = {
+  phones: { short: "Смартфоны" },
+  computers: { short: "Техника" },
+  consoles: { short: "Консоли" },
+  sneakers: { short: "Кроссовки" },
+  watches: { short: "Часы" },
+  collectibles: { short: "Коллекционное" },
 };
 
 export const money = new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 0 });

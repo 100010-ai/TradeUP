@@ -3,7 +3,7 @@ import Script from "next/script";
 import { TelegramSessionProvider } from "@/components/telegram-session";
 import "./globals.css";
 import "./product-plus.css";
-import "./product-images.css";
+import "./dark-redesign.css";
 
 export const metadata: Metadata = {
   title: { default: "TradeUP", template: "%s · TradeUP" },
@@ -19,18 +19,14 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   viewportFit: "cover",
-  themeColor: "#f6f6f4",
+  themeColor: "#0d0f0d",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="ru">
-      <head>
-        <Script src="https://telegram.org/js/telegram-web-app.js?63" strategy="beforeInteractive" />
-      </head>
-      <body>
-        <TelegramSessionProvider>{children}</TelegramSessionProvider>
-      </body>
+      <head><Script src="https://telegram.org/js/telegram-web-app.js?63" strategy="beforeInteractive" /></head>
+      <body><TelegramSessionProvider>{children}</TelegramSessionProvider></body>
     </html>
   );
 }

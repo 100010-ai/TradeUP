@@ -1,26 +1,18 @@
 "use client";
 
 import Link from "next/link";
+import Icon from "@/components/icon";
 import ProductImage from "@/components/product-image";
-import {
-  categoryMeta,
-  conditionLabel,
-  dealDelta,
-  percent,
-  relativeDate,
-  rubles,
-  type MarketListing,
-} from "@/lib/product";
+import { conditionLabel, dealDelta, percent, relativeDate, rubles, type MarketListing } from "@/lib/product";
 
 export default function ListingCard({ listing }: { listing: MarketListing }) {
-  const meta = categoryMeta[listing.category_id] ?? { icon: "📦", short: listing.category_name };
   const delta = dealDelta(listing.price, listing.base_value, listing.condition);
   const deal = delta <= -5;
 
   return (
     <Link href={`/listing/${listing.id}`} className="listingCardProduct">
       <div className={`listingVisual category-${listing.category_id}`}>
-        <ProductImage src={listing.image_url} alt={listing.item_name} fallback={meta.icon} />
+        <ProductImage src={listing.image_url} alt={listing.item_name} categoryId={listing.category_id} />
         {deal && <span className="dealBadge">{percent(delta, false)} к ориентиру</span>}
         <span className="conditionBadge">{listing.condition}%</span>
       </div>
@@ -31,7 +23,7 @@ export default function ListingCard({ listing }: { listing: MarketListing }) {
         <div className="sellerLine">
           <span className="sellerMiniAvatar">{listing.seller_first_name.charAt(0).toUpperCase()}</span>
           <span>{listing.seller_first_name}</span>
-          <i>★ {listing.seller_rating}</i>
+          <i className="sellerRating"><Icon name="star" size={11} />{listing.seller_rating}</i>
         </div>
         <div className="listingTime">{relativeDate(listing.created_at)}</div>
       </div>
