@@ -1,0 +1,88 @@
+/* TradeUP Stars cosmetics. Static effects only: no motion, no gameplay advantage. */
+.cosmeticStore { width: 100%; min-width: 0; padding: 2px 0 112px; color: #f5f5f2; }
+.cosmeticStoreHeader { min-height: 88px; padding: 12px 0 16px; display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; border-bottom: 1px solid #171717; }
+.cosmeticStoreHeader > div:first-child { min-width: 0; }
+.cosmeticStoreHeader > div:first-child > span { color: #b58b27; font-size: 9px; font-weight: 850; letter-spacing: .13em; text-transform: uppercase; }
+.cosmeticStoreHeader h1 { margin: 3px 0 0; font-size: 25px; line-height: 1; letter-spacing: -.045em; }
+.cosmeticStoreHeader p { margin: 7px 0 0; color: #747474; font-size: 10px; line-height: 1.35; }
+.starsOnlyBadge { flex: 0 0 auto; height: 30px; padding: 0 9px; display: inline-flex; align-items: center; gap: 5px; border: 1px solid #2b2414; border-radius: 8px; background: #0b0905; color: #eac55f; font-size: 9px; font-weight: 800; }
+
+.cosmeticLivePreview { position: relative; min-height: 86px; margin: 14px 0 12px; padding: 13px 10px; display: grid; grid-template-columns: 56px minmax(0,1fr) auto; align-items: center; gap: 11px; overflow: hidden; border: 1px solid #1a1a1a; border-radius: 15px; background: #050505; isolation: isolate; }
+.cosmeticLivePreview::before { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; opacity: .9; }
+.cosmeticLiveAvatar { position: relative; width: 54px; height: 54px; display: grid; place-items: center; overflow: hidden; border: 1px solid #242424; border-radius: 16px; background: #0b0b0b; color: #e8e8e4; font-size: 18px; font-weight: 900; }
+.cosmeticLiveAvatar img { width: 100%; height: 100%; display: block; object-fit: cover; border-radius: inherit; }
+.cosmeticLiveIdentity { min-width: 0; }
+.cosmeticLiveIdentity > div { display: flex; align-items: center; gap: 7px; min-width: 0; }
+.cosmeticLiveIdentity strong { min-width: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 17px; line-height: 1.1; letter-spacing: -.025em; }
+.cosmeticLiveIdentity > div > span { flex: 0 0 auto; padding: 3px 5px; border: 1px solid #252525; border-radius: 5px; color: #a7a7a1; font-size: 7px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+.cosmeticLiveIdentity small { display: block; margin-top: 5px; color: #696969; font-size: 9px; }
+.cosmeticLivePreview > button { align-self: end; padding: 0 0 2px; border: 0; background: transparent; color: #656565; font-size: 8px; }
+.cosmeticLivePreview > button:disabled { opacity: 0; }
+
+.cosmeticTabs { width: 100%; display: flex; gap: 17px; overflow-x: auto; scrollbar-width: none; border-bottom: 1px solid #171717; }
+.cosmeticTabs::-webkit-scrollbar { display: none; }
+.cosmeticTabs button { flex: 0 0 auto; height: 39px; padding: 0; border: 0; border-bottom: 2px solid transparent; background: transparent; color: #686868; font-size: 10px; font-weight: 760; }
+.cosmeticTabs button.active { border-bottom-color: #e2b84c; color: #f3f3ef; }
+.cosmeticStoreNotice { padding: 11px 0; border-bottom: 1px solid #181818; color: #a9a9a5; font-size: 10px; }
+.cosmeticStoreLoading { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 26px 10px; padding-top: 16px; }
+.cosmeticStoreLoading i { height: 220px; border-radius: 13px; background: #090909; }
+
+.cosmeticGrid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 26px 10px; padding-top: 15px; }
+.cosmeticItem { min-width: 0; display: flex; flex-direction: column; background: transparent; }
+.cosmeticPreviewButton { position: relative; width: 100%; aspect-ratio: 1.18 / 1; padding: 0; overflow: hidden; display: grid; place-items: center; border: 1px solid #181818; border-radius: 13px; background: #060606; color: #ededeb; }
+.cosmeticPreviewButton::after { content: ""; position: absolute; inset: 0; pointer-events: none; box-shadow: inset 0 1px rgba(255,255,255,.025); }
+.cosmeticRarity { position: absolute; left: 7px; bottom: 7px; padding: 3px 5px; border-radius: 5px; background: rgba(0,0,0,.72); color: #7d7d79; font-size: 7px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; backdrop-filter: blur(8px); }
+.rarity-rare .cosmeticRarity { color: #aebdce; }
+.rarity-epic .cosmeticRarity { color: #c3aee3; }
+.rarity-legendary .cosmeticRarity { color: #e7c261; }
+.cosmeticItemCopy { padding: 8px 1px 0; }
+.cosmeticItemCopy > div { display: flex; align-items: baseline; justify-content: space-between; gap: 7px; }
+.cosmeticItemCopy strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; letter-spacing: -.015em; }
+.cosmeticItemCopy small { flex: 0 0 auto; color: #5d5d5d; font-size: 7px; }
+.cosmeticItemCopy p { min-height: 30px; margin: 5px 0 0; color: #70706d; font-size: 8.5px; line-height: 1.42; }
+.cosmeticAction { width: 100%; height: 34px; margin-top: 8px; display: flex; align-items: center; justify-content: center; gap: 5px; border: 1px solid #222; border-radius: 8px; background: #0d0d0d; color: #d9d9d5; font-size: 9px; font-weight: 820; }
+.cosmeticAction.buy { border-color: #332913; background: #171104; color: #efcb6b; }
+.cosmeticAction.equipped { border-color: #223024; background: #0a120b; color: #83c993; }
+.cosmeticAction:disabled { opacity: .55; }
+
+.cosmeticFrameSample { width: 62px; height: 62px; display: grid; place-items: center; border-radius: 19px; background: #0b0b0b; color: #f1f1ed; font-size: 16px; font-weight: 950; }
+.cosmeticNameSample { font-size: 20px; font-weight: 900; letter-spacing: -.035em; }
+.cosmeticTitleSample { padding: 6px 9px; border: 1px solid #252525; border-radius: 7px; background: #0b0b0b; color: #c9c9c4; font-size: 9px; font-weight: 850; letter-spacing: .05em; text-transform: uppercase; }
+.cosmeticThemeSample { width: 78%; height: 63%; padding: 11px; display: flex; flex-direction: column; justify-content: flex-end; align-items: flex-start; overflow: hidden; border: 1px solid #202020; border-radius: 11px; background: #070707; text-align: left; }
+.cosmeticThemeSample i { width: 23px; height: 23px; margin-bottom: auto; border-radius: 7px; background: #1b1b1b; }
+.cosmeticThemeSample span { font-size: 10px; font-weight: 850; }
+.cosmeticThemeSample small { margin-top: 2px; color: #656565; font-size: 7px; }
+
+/* Frame cosmetics */
+.frame-amber-edge { border: 1px solid #d9ac40 !important; box-shadow: inset 0 0 0 1px #2a210e, 0 0 0 1px #080808, 0 0 0 2px #5f4918; }
+.frame-frost { border: 1px solid #b8c0c7 !important; box-shadow: inset 0 0 0 1px #31373b, 0 0 0 1px #080808, 0 0 0 2px #596067; }
+.frame-carbon { border: 1px solid #555 !important; background-image: repeating-linear-gradient(135deg,#121212 0 3px,#0a0a0a 3px 6px) !important; box-shadow: inset 0 0 0 1px #1e1e1e, 0 0 0 2px #090909; }
+.frame-aurora { border: 2px solid transparent !important; background: linear-gradient(#090909,#090909) padding-box, conic-gradient(from 215deg,#6a7de7,#61c8bc,#b06fce,#6a7de7) border-box !important; }
+.frame-black-label { border: 1px solid #c9a64a !important; box-shadow: inset 0 0 0 2px #050505, inset 0 0 0 3px #564416, 0 0 0 1px #080808; }
+
+/* Name cosmetics */
+.name-signal { color: #f0c65c !important; text-shadow: 0 0 18px rgba(224,177,62,.12); }
+.name-chrome { color: transparent !important; background: linear-gradient(180deg,#fff 8%,#a9adb2 46%,#f1f1ee 82%); -webkit-background-clip: text; background-clip: text; }
+.name-prism { color: transparent !important; background: linear-gradient(90deg,#8aa0ff 0%,#82d6ca 42%,#c490e8 78%,#9aa9ff 100%); -webkit-background-clip: text; background-clip: text; }
+
+/* Title cosmetics */
+.title-dealer { border-color: #3a311d; color: #dec377; }
+.title-collector { border-color: #23323b; color: #a9c6d7; }
+.title-negotiator { border-color: #323047; color: #bbb5e3; }
+.title-early { border-color: #4a3816; color: #ebc25e; box-shadow: inset 0 0 0 1px #1b160b; }
+
+/* Profile themes */
+.theme-obsidian::before, .cosmeticThemeSample.theme-obsidian { background: radial-gradient(circle at 18% 18%,rgba(255,255,255,.055),transparent 36%),#040404 !important; }
+.theme-graphite::before, .cosmeticThemeSample.theme-graphite { background-color: #080808 !important; background-image: linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px) !important; background-size: 14px 14px !important; }
+.theme-amber-studio::before, .cosmeticThemeSample.theme-amber-studio { background: radial-gradient(circle at 20% 25%,rgba(226,179,63,.15),transparent 43%),linear-gradient(135deg,#090704,#030303 65%) !important; }
+.theme-midnight-glass::before, .cosmeticThemeSample.theme-midnight-glass { background: radial-gradient(circle at 78% 18%,rgba(87,112,157,.14),transparent 40%),linear-gradient(145deg,#070b12,#020304 72%) !important; }
+
+@media (min-width: 640px) {
+  .cosmeticGrid { grid-template-columns: repeat(3,minmax(0,1fr)); gap: 28px 12px; }
+}
+@media (max-width: 380px) {
+  .cosmeticLivePreview { grid-template-columns: 52px minmax(0,1fr); }
+  .cosmeticLivePreview > button { display: none; }
+  .cosmeticLiveAvatar { width: 50px; height: 50px; border-radius: 15px; }
+  .cosmeticItemCopy p { min-height: 36px; }
+}
