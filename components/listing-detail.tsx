@@ -46,6 +46,16 @@ export default function ListingDetail({ id }: { id: string }) {
     return () => { active = false; };
   }, [id, supabase]);
 
+  useEffect(() => {
+    if (session.state !== "verified" || !listing || session.profile?.id === listing.seller_id) return;
+    let active = true;
+    void session.callAction("view_listing", { listingId: listing.id }).then((result) => {
+      if (!active || result.counted !== true) return;
+      setListing((current) => current && current.id === listing.id ? { ...current, views: current.views + 1 } : current);
+    }).catch(() => undefined);
+    return () => { active = false; };
+  }, [listing?.id, listing?.seller_id, session.state, session.profile?.id]);
+
   async function toggleFavorite() {
     if (session.state !== "verified") return session.openBot();
     setActionLoading(true);
