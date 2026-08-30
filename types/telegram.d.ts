@@ -12,6 +12,8 @@ type TelegramWebAppUser = {
   photo_url?: string;
 };
 
+type TelegramInset = { top: number; bottom: number; left: number; right: number };
+
 type TelegramWebApp = {
   initData: string;
   initDataUnsafe: {
@@ -22,9 +24,18 @@ type TelegramWebApp = {
   version: string;
   platform: string;
   colorScheme: "light" | "dark";
+  isFullscreen?: boolean;
+  safeAreaInset?: TelegramInset;
+  contentSafeAreaInset?: TelegramInset;
   ready(): void;
   expand(): void;
   close(): void;
+  isVersionAtLeast?(version: string): boolean;
+  requestFullscreen?(): void;
+  exitFullscreen?(): void;
+  setHeaderColor?(color: string): void;
+  setBackgroundColor?(color: string): void;
+  setBottomBarColor?(color: string): void;
 };
 
 declare global {

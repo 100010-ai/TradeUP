@@ -101,7 +101,10 @@ export default function ListingDetail({ id }: { id: string }) {
 
   return (
     <div className="flatListingPage">
-      <div className="flatDetailTop"><Link href="/" aria-label="Назад"><Icon name="arrowLeft" /></Link><button type="button" onClick={() => void toggleFavorite()} className={favorite ? "flatIconButton active" : "flatIconButton"}><Icon name="heart" /></button></div>
+      <div className="flatDetailTop">
+        <Link href="/" aria-label="Назад"><Icon name="arrowLeft" /></Link>
+        <button type="button" aria-label="В избранное" onClick={() => void toggleFavorite()} className={favorite ? "flatIconButton active" : "flatIconButton"}><Icon name="heart" /></button>
+      </div>
 
       <div className={`flatDetailImage category-${listing.category_id}`}>
         <ProductImage src={listing.image_url} alt={listing.item_name} categoryId={listing.category_id} loading="eager" />
@@ -110,14 +113,14 @@ export default function ListingDetail({ id }: { id: string }) {
       <section className="flatDetailMain">
         <div className="flatPriceLine"><strong>{rubles(listing.price)}</strong>{Math.abs(delta) >= 5 && <span className={delta < 0 ? "good" : "high"}>{percent(delta, false)}</span>}</div>
         <h1>{listing.title}</h1>
-        <div className="flatSubline">{conditionLabel(listing.condition)} · {relativeDate(listing.created_at)}</div>
+        <div className="flatSubline">{[listing.brand, conditionLabel(listing.condition), relativeDate(listing.created_at)].filter(Boolean).join(" · ")}</div>
 
         {message && <div className="flatNotice">{message}</div>}
 
         {!isOwner && (
           <div className="flatPrimaryActions">
             <button type="button" className="flatBuy" onClick={() => void buy()} disabled={actionLoading}>{session.state === "verified" ? "Купить" : "Открыть в Telegram"}</button>
-            <button type="button" className="flatChatButton" onClick={() => void openChat()} disabled={actionLoading}><Icon name="message" size={20}/>Написать</button>
+            <button type="button" className="flatChatButton" onClick={() => void openChat()} disabled={actionLoading}><Icon name="message" size={19}/>Написать</button>
           </div>
         )}
         {!isOwner && <button type="button" className="flatTextAction" onClick={() => session.state === "verified" ? setOfferOpen((value) => !value) : session.openBot()}>Предложить свою цену</button>}
@@ -132,6 +135,13 @@ export default function ListingDetail({ id }: { id: string }) {
         )}
       </section>
 
+      <section className="flatSeller" onClick={() => !isOwner && void openChat()} role={!isOwner ? "button" : undefined}>
+        <div className="flatSellerAvatar">{listing.seller_photo_url ? <img src={listing.seller_photo_url} alt=""/> : listing.seller_first_name.charAt(0).toUpperCase()}</div>
+        <div><strong>{listing.seller_first_name}</strong><span>{listing.seller_username ? `@${listing.seller_username} · ` : ""}{sellerLevel(listing.seller_rating)} · {listing.seller_deals_count} сделок</span></div>
+        <div className="flatSellerRating"><Icon name="star" size={15}/>{listing.seller_rating}</div>
+        {!isOwner && <Icon name="chevronRight" size={18}/>} 
+      </section>
+
       <section className="flatSection">
         <h2>Описание</h2>
         <p>{listing.description || "Без описания"}</p>
@@ -143,15 +153,8 @@ export default function ListingDetail({ id }: { id: string }) {
         <div><span>Просмотры</span><strong>{listing.views}</strong></div>
       </section>
 
-      <section className="flatSeller" onClick={() => !isOwner && void openChat()} role={!isOwner ? "button" : undefined}>
-        <div className="flatSellerAvatar">{listing.seller_photo_url ? <img src={listing.seller_photo_url} alt=""/> : listing.seller_first_name.charAt(0).toUpperCase()}</div>
-        <div><strong>{listing.seller_first_name}</strong><span>{sellerLevel(listing.seller_rating)} · {listing.seller_deals_count} сделок</span></div>
-        <div className="flatSellerRating"><Icon name="star" size={15}/>{listing.seller_rating}</div>
-        {!isOwner && <Icon name="chevronRight" size={18}/>} 
-      </section>
-
       <section className="flatSection flatHistory">
-        <h2>Цена предмета</h2>
+        <h2>История цены</h2>
         <Sparkline points={points}/>
       </section>
     </div>

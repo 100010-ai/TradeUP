@@ -22,15 +22,18 @@ export default function ProfileCenter() {
     <div className="compactProfile">
       <section className="compactProfileTop">
         <div className="compactProfileAvatar">{profile.photo_url ? <img src={profile.photo_url} alt=""/> : profile.first_name.charAt(0).toUpperCase()}</div>
-        <div className="compactProfileIdentity"><h1>{profile.first_name}</h1><span>{profile.username ? `@${profile.username}` : level}</span></div>
-        <div className="compactProfileBalance"><strong>{rubles(profile.balance)}</strong><span>баланс</span></div>
+        <div className="compactProfileIdentity">
+          <div className="compactProfileNameLine"><h1>{profile.first_name}</h1><span className="profileLevel">{level}</span></div>
+          <span className="compactProfileHandle">{profile.username ? `@${profile.username}` : "Профиль TradeUP"}</span>
+        </div>
+        <div className="compactProfileBalance"><span>Баланс</span><strong>{rubles(profile.balance)}</strong></div>
       </section>
 
       <div className="compactStatsLine">
         <div className="compactStat"><strong>{profile.rating}</strong><span>рейтинг</span></div>
         <div className="compactStat"><strong>{profile.deals_count}</strong><span>сделок</span></div>
         <div className="compactStat"><strong>{rubles(profile.total_profit)}</strong><span>прибыль</span></div>
-        <div className="compactStat"><strong>{session.counts.inventory}</strong><span>в инвентаре</span></div>
+        <div className="compactStat"><strong>{session.counts.inventory}</strong><span>инвентарь</span></div>
       </div>
 
       <div className="compactRank">

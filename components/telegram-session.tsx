@@ -40,6 +40,17 @@ function countUnread(result: ActionResult) {
   }).length;
 }
 
+function configureTelegramChrome(webApp: NonNullable<Window["Telegram"]>["WebApp"]) {
+  try { webApp.setBackgroundColor?.("#000000"); } catch { /* old client */ }
+  try { webApp.setHeaderColor?.("#000000"); } catch { /* old client */ }
+  try { webApp.setBottomBarColor?.("#000000"); } catch { /* old client */ }
+
+  // Bot API 8.0+ makes the Telegram header transparent in fullscreen mode.
+  try {
+    if (webApp.isVersionAtLeast?.("8.0") && !webApp.isFullscreen) webApp.requestFullscreen?.();
+  } catch { /* fullscreen may be unavailable on a specific Telegram client */ }
+}
+
 export function TelegramSessionProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<SessionState>("checking");
   const [user, setUser] = useState<TelegramUser | null>(null);
@@ -62,7 +73,9 @@ export function TelegramSessionProvider({ children }: { children: React.ReactNod
   const refresh = useCallback(async () => {
     const webApp = window.Telegram?.WebApp;
     if (!webApp) { setState("browser"); return; }
-    webApp.ready(); webApp.expand();
+    webApp.ready();
+    webApp.expand();
+    configureTelegramChrome(webApp);
     if (!webApp.initData) { setState("unavailable"); return; }
     try {
       const response = await fetch("/api/auth/telegram", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ initData: webApp.initData }), cache: "no-store" });

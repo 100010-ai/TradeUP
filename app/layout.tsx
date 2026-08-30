@@ -10,6 +10,7 @@ import "./no-panels.css";
 import "./product-grid.css";
 import "./compact-ui.css";
 import "./black-ui.css";
+import "./final-polish.css";
 
 export const metadata: Metadata = {
   title: { default: "TradeUP", template: "%s · TradeUP" },

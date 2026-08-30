@@ -1,0 +1,361 @@
+/* Final geometry + visual polish. This file must stay last in the cascade. */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  margin: 0;
+  overflow-x: hidden;
+  background: #000;
+}
+
+body { min-height: 100dvh; }
+
+.appRoot {
+  width: 100%;
+  max-width: 100dvw;
+  min-width: 0;
+  overflow-x: clip;
+  background: #000 !important;
+}
+
+.pageCanvas,
+.flowCanvas,
+.marketFlat,
+.flatSellPage,
+.messagesPage,
+.compactProfile,
+.flatListingPage,
+.dealsPage,
+.favoritesPage,
+.leaderboardPage {
+  min-width: 0 !important;
+  max-width: 100% !important;
+}
+
+.pageCanvas {
+  width: 100% !important;
+  padding-left: calc(14px + var(--tg-content-safe-area-inset-left, 0px)) !important;
+  padding-right: calc(14px + var(--tg-content-safe-area-inset-right, 0px)) !important;
+}
+
+.flowCanvas {
+  width: 100% !important;
+  padding-left: var(--tg-content-safe-area-inset-left, 0px) !important;
+  padding-right: var(--tg-content-safe-area-inset-right, 0px) !important;
+}
+
+.appHeader {
+  width: 100% !important;
+  max-width: 100dvw !important;
+  min-width: 0 !important;
+  height: calc(56px + var(--tg-content-safe-area-inset-top, 0px)) !important;
+  padding-top: var(--tg-content-safe-area-inset-top, 0px) !important;
+  padding-left: calc(14px + var(--tg-content-safe-area-inset-left, 0px)) !important;
+  padding-right: calc(14px + var(--tg-content-safe-area-inset-right, 0px)) !important;
+}
+
+.bottomBar {
+  left: 0 !important;
+  right: 0 !important;
+  width: 100% !important;
+  max-width: 100dvw !important;
+  min-width: 0 !important;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  padding-left: calc(5px + var(--tg-content-safe-area-inset-left, 0px)) !important;
+  padding-right: calc(5px + var(--tg-content-safe-area-inset-right, 0px)) !important;
+  padding-bottom: calc(4px + var(--tg-content-safe-area-inset-bottom, 0px)) !important;
+}
+
+.bottomItem { min-width: 0 !important; overflow: hidden; }
+.bottomItem > span:last-of-type { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.marketSearchRow,
+.flatSearch,
+.flatGrid,
+.listingGridProduct { width: 100% !important; min-width: 0 !important; max-width: 100% !important; }
+.flatSearch input { width: 0 !important; min-width: 0 !important; }
+
+/* Horizontal category rail may scroll internally, but can never widen the document. */
+.flatCategoryRail {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  overscroll-behavior-x: contain;
+}
+
+/* Product cards remain the only card-like content. Image is physically paint-clipped. */
+.flatGrid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+.flatListingCard,
+.listingCardProduct {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  transform: none !important;
+  transition: none !important;
+}
+
+.flatListingVisual {
+  position: relative !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  aspect-ratio: 1 / 1 !important;
+  overflow: hidden !important;
+  contain: paint !important;
+  isolation: isolate !important;
+  border: 1px solid #181818 !important;
+  border-radius: 15px !important;
+  background: #070707 !important;
+}
+
+.flatListingVisual .productImageMedia {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  object-fit: cover !important;
+  object-position: center !important;
+  border-radius: inherit !important;
+  transform: none !important;
+  transition: none !important;
+}
+
+.flatListingVisual .productImageFallback {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  overflow: hidden !important;
+  border-radius: inherit !important;
+}
+
+.flatListingContent { width: 100% !important; max-width: 100% !important; min-width: 0 !important; padding-top: 8px !important; }
+.flatListingContent .listingPrice { font-size: 17px !important; letter-spacing: -.035em !important; }
+.flatListingContent .listingCardTitle { min-height: 31px; font-size: 12px !important; line-height: 1.3 !important; }
+.listingMetaLine { margin-top: 5px !important; }
+
+.flatDealBadge {
+  z-index: 2;
+  top: 7px !important;
+  left: 7px !important;
+  border-radius: 6px !important;
+}
+
+/* Profile header: one precise row, no container/card. */
+.compactProfile { padding-top: 0 !important; }
+.compactProfileTop {
+  min-height: 74px !important;
+  display: grid !important;
+  grid-template-columns: 52px minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  gap: 12px !important;
+  padding: 10px 0 12px !important;
+  border-bottom: 1px solid #181818 !important;
+}
+
+.compactProfileAvatar {
+  width: 52px !important;
+  height: 52px !important;
+  border: 1px solid #1e1e1e;
+  background: #080808 !important;
+}
+
+.compactProfileIdentity { align-self: center; min-width: 0; }
+.compactProfileNameLine { display: flex; align-items: center; gap: 7px; min-width: 0; }
+.compactProfileNameLine h1 {
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 20px !important;
+  line-height: 1.05;
+  letter-spacing: -.04em;
+}
+.profileLevel {
+  flex: 0 0 auto;
+  color: var(--accent);
+  font-size: 8px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+.compactProfileHandle { margin-top: 5px !important; color: #777 !important; font-size: 10px !important; }
+
+.compactProfileBalance {
+  align-self: center;
+  min-width: 76px;
+  text-align: right !important;
+}
+.compactProfileBalance span {
+  margin: 0 0 4px !important;
+  color: #666 !important;
+  font-size: 8px !important;
+  text-transform: uppercase !important;
+  letter-spacing: .08em;
+}
+.compactProfileBalance strong { font-size: 15px !important; line-height: 1 !important; white-space: nowrap; }
+
+.compactStatsLine {
+  width: 100%;
+  min-height: 54px !important;
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 0 !important;
+  overflow: visible !important;
+  padding: 10px 0 !important;
+  border-bottom: 1px solid #181818 !important;
+}
+.compactStat { min-width: 0 !important; padding-right: 7px; }
+.compactStat strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px !important; }
+.compactStat span { color: #707070 !important; font-size: 8px !important; }
+.compactRank { padding: 10px 0 !important; border-bottom-color: #181818 !important; }
+.compactRankTrack { height: 2px !important; background: #171717 !important; }
+.compactProfileMenu { margin-top: 2px !important; }
+.compactProfileMenu a { min-height: 46px !important; border-bottom-color: #181818 !important; }
+
+/* Product detail: image-first marketplace page, no stacked cards. */
+.flatListingPage {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  padding-bottom: 20px !important;
+  overflow-x: clip;
+}
+.flatDetailTop {
+  height: 48px !important;
+  padding: 0 !important;
+  border-bottom: 1px solid #141414;
+}
+.flatDetailTop a,
+.flatIconButton {
+  width: 40px !important;
+  height: 40px !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+}
+
+.flatDetailImage {
+  position: relative !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  aspect-ratio: 1 / .92 !important;
+  overflow: hidden !important;
+  contain: paint !important;
+  isolation: isolate !important;
+  background: #050505 !important;
+  border-bottom: 1px solid #151515;
+}
+.flatDetailImage .productImageMedia {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  object-fit: contain !important;
+  object-position: center !important;
+  padding: 6px;
+  transform: none !important;
+}
+.flatDetailImage .productImageFallback { position: absolute !important; inset: 0 !important; width: 100% !important; height: 100% !important; }
+
+.flatDetailMain { padding: 17px 0 15px !important; }
+.flatPriceLine { display: flex !important; align-items: center !important; gap: 9px !important; }
+.flatPriceLine > strong { color: #fff; font-size: 28px !important; line-height: 1 !important; letter-spacing: -.045em !important; }
+.flatPriceLine > span { color: var(--accent) !important; font-size: 10px !important; font-weight: 800; }
+.flatDetailMain h1 { margin-top: 7px !important; max-width: 100%; font-size: 19px !important; line-height: 1.22 !important; }
+.flatSubline { margin-top: 7px !important; color: #777 !important; font-size: 10px !important; }
+
+.flatPrimaryActions {
+  margin-top: 16px !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) !important;
+  gap: 8px !important;
+  border: 0 !important;
+}
+.flatPrimaryActions button {
+  min-width: 0;
+  min-height: 46px !important;
+  border-radius: 10px !important;
+  font-size: 12px !important;
+  font-weight: 850 !important;
+}
+.flatBuy { background: var(--accent) !important; color: #0a0a0a !important; }
+.flatChatButton { background: #101010 !important; color: #f3f3ef !important; border: 1px solid #202020 !important; }
+.flatTextAction { margin-top: 3px !important; min-height: 38px !important; text-align: left; padding: 0 !important; }
+
+.flatSeller {
+  min-height: 68px !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  border-top: 1px solid #181818 !important;
+  border-bottom: 1px solid #181818 !important;
+}
+.flatSellerAvatar { width: 42px !important; height: 42px !important; background: #090909 !important; border: 1px solid #1d1d1d; }
+.flatSeller > div:nth-child(2) strong { font-size: 12px !important; }
+.flatSeller > div:nth-child(2) span { color: #707070 !important; }
+
+.flatSection,
+.flatRows {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  border-color: #181818 !important;
+}
+.flatSection { margin-top: 0 !important; padding-top: 16px !important; padding-bottom: 16px !important; }
+.flatSection + .flatRows { margin-top: 0 !important; }
+.flatRows { margin-top: 0 !important; }
+.flatRows > div { min-height: 46px !important; border-bottom-color: #181818 !important; }
+.flatSection h2 { font-size: 14px !important; }
+.flatSection p { color: #b7b7b3 !important; font-size: 12px !important; line-height: 1.5 !important; }
+.flatHistory .sparkline { height: 82px !important; }
+
+/* Never allow images anywhere in item lists to escape their intended frame. */
+.flatInventoryImage,
+.flatSelectedImage,
+.messageThumb,
+.chatProductThumb {
+  position: relative;
+  overflow: hidden !important;
+  contain: paint;
+}
+.flatInventoryImage .productImageMedia,
+.flatSelectedImage .productImageMedia,
+.messageThumb .productImageMedia,
+.chatProductThumb .productImageMedia {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  object-fit: cover !important;
+  display: block !important;
+}
+
+@media (min-width: 640px) {
+  .flatGrid { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+}
+
+@media (max-width: 390px) {
+  .pageCanvas { padding-left: calc(11px + var(--tg-content-safe-area-inset-left, 0px)) !important; padding-right: calc(11px + var(--tg-content-safe-area-inset-right, 0px)) !important; }
+  .flatGrid { gap: 19px 8px !important; }
+  .compactProfileTop { grid-template-columns: 48px minmax(0, 1fr) auto !important; gap: 10px !important; }
+  .compactProfileAvatar { width: 48px !important; height: 48px !important; }
+  .compactProfileNameLine h1 { font-size: 18px !important; }
+  .compactProfileBalance { min-width: 68px; }
+  .compactProfileBalance strong { font-size: 14px !important; }
+  .profileLevel { display: none; }
+}
