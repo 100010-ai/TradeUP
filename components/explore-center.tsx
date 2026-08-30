@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Icon from "@/components/icon";
 import ProductImage from "@/components/product-image";
@@ -49,7 +49,7 @@ export default function ExploreCenter(){
  async function buyBundle(id:string){setBusy(true);try{await session.callDepthAction("buy_bundle",{bundleId:id});await load("bundles",true);}catch(e){setError(e instanceof Error&&e.message==="insufficient_funds"?"Недостаточно средств":"Покупка не прошла");}finally{setBusy(false);}}
  if(session.state!=="verified"&&!loading)return <div className="flatAuth"><Icon name="trend" size={30}/><strong>Рынок+ доступен в Telegram</strong><button onClick={session.openBot}>Открыть TradeUP</button></div>;
  const marketStats=(overview?.marketStats??[]) as MarketStat[];const goals=(overview?.goalDone??{}) as Record<string,boolean>;const claims=new Set(((overview?.goalClaims??[]) as {goal_key:string}[]).map(x=>x.goal_key));const chains=(overview?.chains??[]) as {id:string;start_capital:number|string;current_capital:number|string;trade_count:number;total_profit:number|string;is_active:boolean}[];const season=overview?.season as {name:string;ends_at:string}|null|undefined;const seasonStats=overview?.seasonStats as {profit:number|string;volume:number|string;sales:number;purchases:number;best_margin_pct:number|string}|null|undefined;const highlight=overview?.highlight as {profit:number|string;profit_pct:number|string;item?:InventoryItem;profile?:{first_name:string;username:string|null}}|null|undefined;
- const listingMap=useMemo(()=>new Map((auctionData?.listings??[]).map(x=>[x.id,x])),[auctionData]);const auctionItemMap=useMemo(()=>new Map((auctionData?.items??[]).map(x=>[x.id,x])),[auctionData]);const bundleItemMap=useMemo(()=>new Map((bundleData?.items??[]).map(x=>[x.id,x])),[bundleData]);
+ const listingMap=new Map((auctionData?.listings??[]).map(x=>[x.id,x]));const auctionItemMap=new Map((auctionData?.items??[]).map(x=>[x.id,x]));const bundleItemMap=new Map((bundleData?.items??[]).map(x=>[x.id,x]));
  return <div className="depthPage">
   <header className="depthHeader"><div><span>Рынок+</span><h1>Живой рынок</h1></div><Link href="/" aria-label="На рынок"><Icon name="arrowLeft"/></Link></header>
   <nav className="depthTabs">{tabs.map(t=><button key={t.id} className={tab===t.id?"active":""} onClick={()=>changeTab(t.id)}><Icon name={t.icon} size={17}/><span>{t.label}</span></button>)}</nav>
