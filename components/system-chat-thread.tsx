@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Icon from "@/components/icon";
 import { useTelegramSession } from "@/components/telegram-session";
 
@@ -25,29 +25,43 @@ export default function SystemChatThread({ channel }: { channel: "tradeup" | "su
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const endRef = useRef<HTMLDivElement | null>(null);
+  const loadInFlight = useRef(false);
 
-  async function load(silent = false) {
+  const load = useCallback(async (silent = false) => {
     if (session.state !== "verified") { if (!silent) setLoading(false); return; }
+    if (loadInFlight.current) return;
+    loadInFlight.current = true;
     if (!silent) setLoading(true);
     try {
       const result = await session.callChatAction("open_system_chat", { channel }) as OpenSystemResult;
-      if (channel === "tradeup") setAnnouncements((result.messages ?? []) as Announcement[]);
-      else {
-        setMessages((result.messages ?? []) as SupportMessage[]);
-        setTicket(result.ticket ?? null);
-        setTopics(result.topics ?? []);
+      if (channel === "tradeup") {
+        const next = (result.messages ?? []) as Announcement[];
+        setAnnouncements((current) => current.length === next.length && current.at(-1)?.id === next.at(-1)?.id ? current : next);
+      } else {
+        const next = (result.messages ?? []) as SupportMessage[];
+        setMessages((current) => current.length === next.length && current.at(-1)?.id === next.at(-1)?.id ? current : next);
+        setTicket((current) => current?.id === result.ticket?.id && current?.status === result.ticket?.status && current?.updated_at === result.ticket?.updated_at ? current : result.ticket ?? null);
+        setTopics((current) => current.length === (result.topics ?? []).length ? current : result.topics ?? []);
       }
       setError(null);
     } catch { setError("Не удалось открыть чат"); }
-    finally { if (!silent) setLoading(false); }
-  }
+    finally {
+      loadInFlight.current = false;
+      if (!silent) setLoading(false);
+    }
+  }, [channel, session]);
 
   useEffect(() => {
     if (session.state !== "verified") { if (["browser", "unavailable", "error"].includes(session.state)) setLoading(false); return; }
+    const poll = () => { if (document.visibilityState === "visible") void load(true); };
     void load();
-    const timer = window.setInterval(() => { if (document.visibilityState === "visible") void load(true); }, channel === "support" ? 2500 : 10000);
-    return () => window.clearInterval(timer);
-  }, [session.state, channel]);
+    const timer = window.setInterval(poll, channel === "support" ? 5_000 : 60_000);
+    document.addEventListener("visibilitychange", poll);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", poll);
+    };
+  }, [session.state, channel, load]);
 
   useEffect(() => { endRef.current?.scrollIntoView({ block: "end" }); }, [announcements.length, messages.length]);
 
