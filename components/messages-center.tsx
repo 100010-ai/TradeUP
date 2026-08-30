@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Icon from "@/components/icon";
 import { useTelegramSession } from "@/components/telegram-session";
 import { relativeDate, rubles } from "@/lib/product";
@@ -24,9 +24,12 @@ export default function MessagesCenter() {
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const loadInFlight = useRef(false);
 
-  async function load(silent = false) {
+  const load = useCallback(async (silent = false) => {
     if (session.state !== "verified") { if (!silent) setLoading(false); return; }
+    if (loadInFlight.current) return;
+    loadInFlight.current = true;
     if (!silent) setLoading(true);
     try {
       const result = await session.callChatAction("threads") as ThreadsResult;
@@ -39,19 +42,25 @@ export default function MessagesCenter() {
     } catch {
       setError("Не удалось загрузить чаты");
     } finally {
+      loadInFlight.current = false;
       if (!silent) setLoading(false);
     }
-  }
+  }, [session]);
 
   useEffect(() => {
     if (session.state !== "verified") {
       if (["browser", "unavailable", "error"].includes(session.state)) setLoading(false);
       return;
     }
+    const poll = () => { if (document.visibilityState === "visible") void load(true); };
     void load();
-    const timer = window.setInterval(() => { if (document.visibilityState === "visible") void load(true); }, 5000);
-    return () => window.clearInterval(timer);
-  }, [session.state]);
+    const timer = window.setInterval(poll, 10_000);
+    document.addEventListener("visibilitychange", poll);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", poll);
+    };
+  }, [session.state, load]);
 
   const profileMap = useMemo(() => new Map(profiles.map((profile) => [profile.id, profile])), [profiles]);
   const listingMap = useMemo(() => new Map(listings.map((listing) => [listing.id, listing])), [listings]);
@@ -83,7 +92,7 @@ export default function MessagesCenter() {
       {nothing && <div className="flatEmpty messagesEmpty"><Icon name="message" size={30}/><strong>Ничего не найдено</strong><span>Измени запрос</span></div>}
 
       {!loading && !error && (visibleSystems.length > 0 || visible.length > 0) && <div className="messageList">
-        {visibleSystems.map((chat) => <Link href={`/messages/${chat.id}`} className={chat.unread ? "messageRow systemChatRow unread" : "messageRow systemChatRow"} key={chat.id}>
+        {visibleSystems.map((chat) => <Link prefetch={false} href={`/messages/${chat.id}`} className={chat.unread ? "messageRow systemChatRow unread" : "messageRow systemChatRow"} key={chat.id}>
           <div className={chat.id === "tradeup" ? "messagePersonAvatar systemAvatar tradeup" : "messagePersonAvatar systemAvatar support"}><Icon name={chat.id === "tradeup" ? "bot" : "message"} size={21}/></div>
           <div className="messageMain">
             <div className="messageNameLine"><strong>{chat.title}</strong><time>{chat.updatedAt && new Date(chat.updatedAt).getTime() > 0 ? relativeDate(chat.updatedAt) : ""}</time></div>
@@ -100,8 +109,8 @@ export default function MessagesCenter() {
           const readAt = thread.buyer_id === profileId ? thread.buyer_read_at : thread.seller_read_at;
           const unread = Boolean(thread.last_message_at && thread.last_sender_id !== profileId && (!readAt || new Date(thread.last_message_at).getTime() > new Date(readAt).getTime()));
           const initial = other?.first_name?.trim().charAt(0).toUpperCase() || "T";
-          return <Link href={`/messages/${thread.id}`} className={unread ? "messageRow unread" : "messageRow"} key={thread.id}>
-            <div className="messagePersonAvatar">{other?.photo_url ? <img src={other.photo_url} alt=""/> : <span>{initial}</span>}{other?.is_online && <i />}</div>
+          return <Link prefetch={false} href={`/messages/${thread.id}`} className={unread ? "messageRow unread" : "messageRow"} key={thread.id}>
+            <div className="messagePersonAvatar">{other?.photo_url ? <img src={other.photo_url} alt="" loading="lazy" decoding="async"/> : <span>{initial}</span>}{other?.is_online && <i />}</div>
             <div className="messageMain">
               <div className="messageNameLine"><strong>{other?.first_name ?? "Пользователь"}</strong><time>{thread.last_message_at ? relativeDate(thread.last_message_at) : ""}</time></div>
               <div className="messagePreview">{thread.last_message_preview || "Начните переписку"}</div>
