@@ -20,6 +20,7 @@ import "./cosmetics.css";
 import "./professional-ui.css";
 import "./safe-area-guard.css";
 import "./depth.css";
+import "./item-context.css";
 
 export const metadata: Metadata = {
   title: { default: "TradeUP", template: "%s · TradeUP" },
