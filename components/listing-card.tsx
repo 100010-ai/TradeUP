@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import ProductImage from "@/components/product-image";
 import {
   categoryMeta,
   conditionLabel,
@@ -19,7 +20,7 @@ export default function ListingCard({ listing }: { listing: MarketListing }) {
   return (
     <Link href={`/listing/${listing.id}`} className="listingCardProduct">
       <div className={`listingVisual category-${listing.category_id}`}>
-        {listing.image_url ? <img src={listing.image_url} alt="" loading="lazy" /> : <span>{meta.icon}</span>}
+        <ProductImage src={listing.image_url} alt={listing.item_name} fallback={meta.icon} />
         {deal && <span className="dealBadge">{percent(delta, false)} к ориентиру</span>}
         <span className="conditionBadge">{listing.condition}%</span>
       </div>

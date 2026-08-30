@@ -21,6 +21,9 @@ export type MarketListing = {
   base_value: number | string;
   volatility: number | string;
   image_url: string | null;
+  image_source_url: string | null;
+  image_credit: string | null;
+  image_license: string | null;
 };
 
 export type PlayerProfile = {

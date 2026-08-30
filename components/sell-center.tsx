@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import ProductImage from "@/components/product-image";
 import { useTelegramSession } from "@/components/telegram-session";
 import {
   categoryMeta,
@@ -148,7 +149,10 @@ export default function SellCenter() {
             return (
               <article className={`${selectedId === item.id ? "inventoryCard selected" : "inventoryCard"} ${live ? "listed" : ""}`} key={item.id}>
                 <button type="button" className="inventorySelect" onClick={() => selectItem(item)} disabled={Boolean(live)}>
-                  <div className={`inventoryVisual category-${itemType?.category_id ?? "other"}`}><span>{meta.icon}</span><i>{item.condition}%</i></div>
+                  <div className={`inventoryVisual category-${itemType?.category_id ?? "other"}`}>
+                    <ProductImage src={itemType?.image_url} alt={itemType?.name ?? "Предмет"} fallback={meta.icon} />
+                    <i>{item.condition}%</i>
+                  </div>
                   <div className="inventoryInfo"><span>{itemType?.brand ?? meta.short}</span><h3>{itemType?.name ?? "Предмет"}</h3><p>{conditionLabel(item.condition)} · закупка {rubles(item.acquired_price)}</p></div>
                 </button>
                 {live && (

@@ -3,6 +3,7 @@ import Script from "next/script";
 import { TelegramSessionProvider } from "@/components/telegram-session";
 import "./globals.css";
 import "./product-plus.css";
+import "./product-images.css";
 
 export const metadata: Metadata = {
   title: { default: "TradeUP", template: "%s · TradeUP" },
