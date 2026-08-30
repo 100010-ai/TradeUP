@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import Icon from "@/components/icon";
+import TraderIdentity from "@/components/trader-identity";
 import { useTelegramSession } from "@/components/telegram-session";
 import { emptyEquipped, styleFor, titleFor, type CosmeticItem, type EquippedCosmetics } from "@/lib/cosmetics";
 import { rubles, sellerLevel } from "@/lib/product";
@@ -63,6 +64,8 @@ export default function ProfileCenter() {
         <div className="compactRankLine"><strong>{level}</strong><span>{profile.rating} / {nextRating}</span></div>
         <div className="compactRankTrack"><i style={{ width: `${progress}%` }}/></div>
       </div>
+
+      <TraderIdentity/>
 
       <nav className="compactProfileMenu">
         <Link href="/explore"><Icon name="trend"/><span>Рынок+</span><small>цели · аукционы · коллекции</small><Icon name="chevronRight" size={16}/></Link>
