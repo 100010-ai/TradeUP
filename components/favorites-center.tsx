@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import Icon from "@/components/icon";
 import ListingCard from "@/components/listing-card";
@@ -28,7 +29,7 @@ export default function FavoritesCenter() {
     <div className="pageHeadline"><div><span className="sectionEyebrow">Избранное</span><h1>Сохранённые лоты</h1><p>Следи за тем, что хочешь забрать позже.</p></div><div className="inventoryCounter"><strong>{listings.length}</strong><span>лотов</span></div></div>
     {loading && <div className="listingGridProduct">{Array.from({ length: 4 }).map((_, index) => <div className="listingSkeleton" key={index} />)}</div>}
     {error && <div className="actionMessage">{error}</div>}
-    {!loading && !error && listings.length === 0 && <div className="emptyPanel"><div className="emptySymbol"><Icon name="heart" /></div><h3>Пока ничего не сохранено</h3><p>Добавляй лоты в избранное из карточки товара.</p><a href="/" className="primaryAction">Смотреть рынок</a></div>}
+    {!loading && !error && listings.length === 0 && <div className="emptyPanel"><div className="emptySymbol"><Icon name="heart" /></div><h3>Пока ничего не сохранено</h3><p>Добавляй лоты в избранное из карточки товара.</p><Link href="/" className="primaryAction">Смотреть рынок</Link></div>}
     {!loading && listings.length > 0 && <div className="listingGridProduct">{listings.map((listing) => <ListingCard key={listing.id} listing={listing} />)}</div>}
   </div>;
 }
