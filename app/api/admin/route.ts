@@ -42,7 +42,10 @@ export async function GET(request: Request) {
     db.from("trades").select("amount,fee,seller_profit,completed_at").order("completed_at", { ascending: false }).limit(5000),
   ]);
 
-  const fatal = [profilesResult.error, ticketsResult.error, announcementsResult.error, topicsResult.error, tradeRowsResult.error].find(Boolean);
+  const fatal = [
+    usersCount.error, onlineCount.error, activeListingsCount.error, tradesCount.error, waitingCount.error, activeCount.error,
+    profilesResult.error, ticketsResult.error, announcementsResult.error, topicsResult.error, tradeRowsResult.error,
+  ].find(Boolean);
   if (fatal) return NextResponse.json({ ok: false, error: "admin_dashboard_load_failed" }, { status: 500 });
 
   const tradeRows = tradeRowsResult.data ?? [];
@@ -76,14 +79,15 @@ export async function POST(request: Request) {
   if (!db) return NextResponse.json({ ok: false, error: "admin_database_not_configured" }, { status: 503 });
 
   let body: Record<string, unknown>;
-  try { body = await request.json() as Record<string, unknown>; } catch { return NextResponse.json({ ok: false, error: "invalid_json" }, { status: 400 }); }
+  try { body = await request.json() as Record<string, unknown>; }
+  catch { return NextResponse.json({ ok: false, error: "invalid_json" }, { status: 400 }); }
   const action = typeof body.action === "string" ? body.action : "";
 
   if (action === "publish_announcement") {
     const text = typeof body.body === "string" ? body.body.trim() : "";
     if (!text || text.length > 4000) return NextResponse.json({ ok: false, error: "invalid_message" }, { status: 400 });
     const result = await db.from("tradeup_announcements").insert({ body: text, is_active: true }).select("id,body,is_active,published_at,created_at").single();
-    if (result.error) return NextResponse.json({ ok: false, error: "announcement_publish_failed" }, { status: 500 });
+    if (result.error || !result.data) return NextResponse.json({ ok: false, error: "announcement_publish_failed" }, { status: 500 });
     return NextResponse.json({ ok: true, announcement: result.data });
   }
 
@@ -91,8 +95,9 @@ export async function POST(request: Request) {
     const id = typeof body.id === "string" ? body.id : "";
     const isActive = body.isActive === true;
     if (!id) return NextResponse.json({ ok: false, error: "invalid_payload" }, { status: 400 });
-    const result = await db.from("tradeup_announcements").update({ is_active: isActive }).eq("id", id);
+    const result = await db.from("tradeup_announcements").update({ is_active: isActive }).eq("id", id).select("id").maybeSingle();
     if (result.error) return NextResponse.json({ ok: false, error: "announcement_update_failed" }, { status: 500 });
+    if (!result.data) return NextResponse.json({ ok: false, error: "announcement_not_found" }, { status: 404 });
     return NextResponse.json({ ok: true });
   }
 
@@ -100,12 +105,13 @@ export async function POST(request: Request) {
     const ticketId = typeof body.ticketId === "string" ? body.ticketId : "";
     if (!ticketId) return NextResponse.json({ ok: false, error: "invalid_payload" }, { status: 400 });
     const current = await db.from("support_tickets").select("id,status").eq("id", ticketId).maybeSingle();
-    if (current.error || !current.data) return NextResponse.json({ ok: false, error: "ticket_not_found" }, { status: 404 });
+    if (current.error) return NextResponse.json({ ok: false, error: "ticket_load_failed" }, { status: 500 });
+    if (!current.data) return NextResponse.json({ ok: false, error: "ticket_not_found" }, { status: 404 });
     if (current.data.status === "closed") return NextResponse.json({ ok: false, error: "ticket_closed" }, { status: 409 });
     if (current.data.status !== "active") {
       const now = new Date().toISOString();
-      const update = await db.from("support_tickets").update({ status: "active", joined_at: now, admin_read_at: now, updated_at: now }).eq("id", ticketId);
-      if (update.error) return NextResponse.json({ ok: false, error: "ticket_update_failed" }, { status: 500 });
+      const update = await db.from("support_tickets").update({ status: "active", joined_at: now, admin_read_at: now, updated_at: now }).eq("id", ticketId).select("id").maybeSingle();
+      if (update.error || !update.data) return NextResponse.json({ ok: false, error: "ticket_update_failed" }, { status: 500 });
       const message = await db.from("support_messages").insert({ ticket_id: ticketId, sender_type: "system", body: "Поддержка подключилась к чату." });
       if (message.error) return NextResponse.json({ ok: false, error: "support_message_failed" }, { status: 500 });
     }
@@ -117,26 +123,33 @@ export async function POST(request: Request) {
     const text = typeof body.body === "string" ? body.body.trim() : "";
     if (!ticketId || !text || text.length > 2000) return NextResponse.json({ ok: false, error: "invalid_payload" }, { status: 400 });
     const current = await db.from("support_tickets").select("id,status").eq("id", ticketId).maybeSingle();
-    if (current.error || !current.data) return NextResponse.json({ ok: false, error: "ticket_not_found" }, { status: 404 });
+    if (current.error) return NextResponse.json({ ok: false, error: "ticket_load_failed" }, { status: 500 });
+    if (!current.data) return NextResponse.json({ ok: false, error: "ticket_not_found" }, { status: 404 });
     if (current.data.status === "closed") return NextResponse.json({ ok: false, error: "ticket_closed" }, { status: 409 });
     if (current.data.status !== "active") {
       const now = new Date().toISOString();
-      const update = await db.from("support_tickets").update({ status: "active", joined_at: now, admin_read_at: now, updated_at: now }).eq("id", ticketId);
-      if (update.error) return NextResponse.json({ ok: false, error: "ticket_update_failed" }, { status: 500 });
-      await db.from("support_messages").insert({ ticket_id: ticketId, sender_type: "system", body: "Поддержка подключилась к чату." });
+      const update = await db.from("support_tickets").update({ status: "active", joined_at: now, admin_read_at: now, updated_at: now }).eq("id", ticketId).select("id").maybeSingle();
+      if (update.error || !update.data) return NextResponse.json({ ok: false, error: "ticket_update_failed" }, { status: 500 });
+      const joined = await db.from("support_messages").insert({ ticket_id: ticketId, sender_type: "system", body: "Поддержка подключилась к чату." });
+      if (joined.error) return NextResponse.json({ ok: false, error: "support_message_failed" }, { status: 500 });
     }
     const result = await db.from("support_messages").insert({ ticket_id: ticketId, sender_type: "admin", body: text }).select("id,ticket_id,sender_type,body,created_at").single();
-    if (result.error) return NextResponse.json({ ok: false, error: "support_message_failed" }, { status: 500 });
+    if (result.error || !result.data) return NextResponse.json({ ok: false, error: "support_message_failed" }, { status: 500 });
     return NextResponse.json({ ok: true, message: result.data });
   }
 
   if (action === "close_support") {
     const ticketId = typeof body.ticketId === "string" ? body.ticketId : "";
     if (!ticketId) return NextResponse.json({ ok: false, error: "invalid_payload" }, { status: 400 });
+    const current = await db.from("support_tickets").select("id,status").eq("id", ticketId).maybeSingle();
+    if (current.error) return NextResponse.json({ ok: false, error: "ticket_load_failed" }, { status: 500 });
+    if (!current.data) return NextResponse.json({ ok: false, error: "ticket_not_found" }, { status: 404 });
+    if (current.data.status === "closed") return NextResponse.json({ ok: true, alreadyClosed: true });
     const now = new Date().toISOString();
-    const update = await db.from("support_tickets").update({ status: "closed", closed_at: now, updated_at: now }).eq("id", ticketId);
-    if (update.error) return NextResponse.json({ ok: false, error: "ticket_update_failed" }, { status: 500 });
-    await db.from("support_messages").insert({ ticket_id: ticketId, sender_type: "system", body: "Обращение закрыто. Если появится новый вопрос, выбери тему заново." });
+    const update = await db.from("support_tickets").update({ status: "closed", closed_at: now, updated_at: now }).eq("id", ticketId).select("id").maybeSingle();
+    if (update.error || !update.data) return NextResponse.json({ ok: false, error: "ticket_update_failed" }, { status: 500 });
+    const message = await db.from("support_messages").insert({ ticket_id: ticketId, sender_type: "system", body: "Обращение закрыто. Если появится новый вопрос, выбери тему заново." });
+    if (message.error) return NextResponse.json({ ok: false, error: "support_message_failed" }, { status: 500 });
     return NextResponse.json({ ok: true });
   }
 
@@ -146,8 +159,9 @@ export async function POST(request: Request) {
     const autoReply = typeof body.autoReply === "string" ? body.autoReply.trim() : "";
     const isActive = body.isActive !== false;
     if (!id || !title || !autoReply || title.length > 80 || autoReply.length > 2000) return NextResponse.json({ ok: false, error: "invalid_payload" }, { status: 400 });
-    const update = await db.from("support_topics").update({ title, auto_reply: autoReply, is_active: isActive, updated_at: new Date().toISOString() }).eq("id", id);
+    const update = await db.from("support_topics").update({ title, auto_reply: autoReply, is_active: isActive, updated_at: new Date().toISOString() }).eq("id", id).select("id").maybeSingle();
     if (update.error) return NextResponse.json({ ok: false, error: "topic_update_failed" }, { status: 500 });
+    if (!update.data) return NextResponse.json({ ok: false, error: "topic_not_found" }, { status: 404 });
     return NextResponse.json({ ok: true });
   }
 
