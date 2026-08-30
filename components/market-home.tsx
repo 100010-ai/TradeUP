@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Icon, { categoryIconName } from "@/components/icon";
 import ListingCard from "@/components/listing-card";
-import { getSupabasePublic } from "@/lib/supabase/public";
 import { categoryMeta, type MarketCardListing } from "@/lib/product";
 
 type Category = { id: string; name: string; sort_order: number };
@@ -12,9 +11,20 @@ type SortMode = "new" | "cheap" | "deal";
 const CARD_COLUMNS = "id,title,price,created_at,condition,item_name,brand,category_id,base_value,image_url";
 const MARKET_LIMIT = 96;
 const PAGE_SIZE = 24;
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "") ?? "";
+const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? "";
+
+async function publicRest<T>(path: string): Promise<T> {
+  if (!SUPABASE_URL || !SUPABASE_KEY) throw new Error("Supabase не настроен");
+  const response = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+    headers: { apikey: SUPABASE_KEY, Accept: "application/json" },
+    cache: "no-store",
+  });
+  if (!response.ok) throw new Error(`Рынок недоступен (${response.status})`);
+  return response.json() as Promise<T>;
+}
 
 export default function MarketHome() {
-  const supabase = useMemo(() => getSupabasePublic(), []);
   const [categories, setCategories] = useState<Category[]>([]);
   const [listings, setListings] = useState<MarketCardListing[]>([]);
   const [query, setQuery] = useState("");
@@ -25,29 +35,20 @@ export default function MarketHome() {
   const [error, setError] = useState<string | null>(null);
 
   const loadCategories = useCallback(async () => {
-    if (!supabase) throw new Error("Supabase не настроен");
-    const result = await supabase.from("categories").select("id,name,sort_order").order("sort_order");
-    if (result.error) throw result.error;
-    setCategories(result.data ?? []);
-  }, [supabase]);
+    const data = await publicRest<Category[]>("categories?select=id,name,sort_order&order=sort_order.asc");
+    setCategories(data);
+  }, []);
 
   const loadListings = useCallback(async () => {
-    if (!supabase) throw new Error("Supabase не настроен");
-    const result = await supabase.from("market_listings").select(CARD_COLUMNS).order("created_at", { ascending: false }).limit(MARKET_LIMIT);
-    if (result.error) throw result.error;
-    setListings((result.data ?? []) as unknown as MarketCardListing[]);
-  }, [supabase]);
+    const select = encodeURIComponent(CARD_COLUMNS);
+    const data = await publicRest<MarketCardListing[]>(`market_listings?select=${select}&order=created_at.desc&limit=${MARKET_LIMIT}`);
+    setListings(data);
+  }, []);
 
   useEffect(() => {
     let active = true;
     let reloadTimer: number | null = null;
-
-    void Promise.all([loadCategories(), loadListings()])
-      .then(() => { if (active) setError(null); })
-      .catch((reason: unknown) => { if (active) setError(reason instanceof Error ? reason.message : "Не удалось загрузить рынок"); })
-      .finally(() => { if (active) setLoading(false); });
-
-    if (!supabase) return () => { active = false; };
+    let disposeRealtime: (() => void) | null = null;
 
     const scheduleReload = () => {
       if (document.visibilityState !== "visible") return;
@@ -60,18 +61,39 @@ export default function MarketHome() {
 
     const onVisibility = () => { if (document.visibilityState === "visible") scheduleReload(); };
     document.addEventListener("visibilitychange", onVisibility);
-    const channel = supabase
-      .channel("tradeup-market-ui")
-      .on("postgres_changes", { event: "*", schema: "public", table: "listings" }, scheduleReload)
-      .subscribe();
+
+    void Promise.all([loadCategories(), loadListings()])
+      .then(async () => {
+        if (!active) return;
+        setError(null);
+        setLoading(false);
+        try {
+          const { getSupabasePublic } = await import("@/lib/supabase/public");
+          if (!active) return;
+          const realtime = getSupabasePublic();
+          if (!realtime) return;
+          const channel = realtime
+            .channel("tradeup-market-ui")
+            .on("postgres_changes", { event: "*", schema: "public", table: "listings" }, scheduleReload)
+            .subscribe();
+          disposeRealtime = () => { void realtime.removeChannel(channel); };
+        } catch {
+          // Realtime is an enhancement. The market remains usable via foreground refreshes.
+        }
+      })
+      .catch((reason: unknown) => {
+        if (!active) return;
+        setError(reason instanceof Error ? reason.message : "Не удалось загрузить рынок");
+        setLoading(false);
+      });
 
     return () => {
       active = false;
       if (reloadTimer !== null) window.clearTimeout(reloadTimer);
       document.removeEventListener("visibilitychange", onVisibility);
-      void supabase.removeChannel(channel);
+      disposeRealtime?.();
     };
-  }, [supabase, loadCategories, loadListings]);
+  }, [loadCategories, loadListings]);
 
   const visibleListings = useMemo(() => {
     const normalized = query.trim().toLocaleLowerCase("ru");
