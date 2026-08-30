@@ -13,6 +13,7 @@ import "./black-ui.css";
 import "./final-polish.css";
 import "./system-tools.css";
 import "./navbar-lock.css";
+import "./notifications.css";
 
 export const metadata: Metadata = {
   title: { default: "TradeUP", template: "%s · TradeUP" },
