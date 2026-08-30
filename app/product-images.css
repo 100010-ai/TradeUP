@@ -33,6 +33,29 @@
   font-size: clamp(86px, 14vw, 150px);
 }
 
+.detailImageCredit {
+  position: absolute;
+  z-index: 2;
+  top: 12px;
+  right: 12px;
+  max-width: calc(100% - 24px);
+  padding: 6px 8px;
+  overflow: hidden;
+  border-radius: 8px;
+  background: rgba(20, 20, 20, .62);
+  color: rgba(255, 255, 255, .78);
+  backdrop-filter: blur(9px);
+  font-size: 7px;
+  line-height: 1.2;
+  text-decoration: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.detailImageCredit:hover {
+  color: #fff;
+}
+
 .imageSourceNote {
   display: inline-flex;
   margin-top: 7px;

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import ProductImage from "@/components/product-image";
 import { useTelegramSession } from "@/components/telegram-session";
 import { getSupabasePublic } from "@/lib/supabase/public";
 import {
@@ -182,7 +183,18 @@ export default function ListingDetail({ id }: { id: string }) {
 
       <section className="detailGrid">
         <div className={`detailVisual category-${listing.category_id}`}>
-          {listing.image_url ? <img src={listing.image_url} alt="" /> : <span>{meta.icon}</span>}
+          <ProductImage src={listing.image_url} alt={listing.item_name} fallback={meta.icon} loading="eager" />
+          {listing.image_source_url && (listing.image_credit || listing.image_license) && (
+            <a
+              className="detailImageCredit"
+              href={listing.image_source_url}
+              target="_blank"
+              rel="noreferrer"
+              title="Источник изображения"
+            >
+              Фото: {listing.image_credit ?? "источник"}{listing.image_license ? ` · ${listing.image_license}` : ""}
+            </a>
+          )}
           <div className="detailVisualMeta">
             <span>{listing.category_name}</span>
             <strong>{listing.condition}%</strong>
