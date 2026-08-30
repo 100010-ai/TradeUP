@@ -1,0 +1,267 @@
+/* Final TradeUP visual direction: true black shell, panels removed everywhere except product tiles. */
+:root {
+  --bg: #000000 !important;
+  --surface: #000000 !important;
+  --surface-soft: #090909 !important;
+  --surface-strong: #101010 !important;
+  --text: #f5f5f2 !important;
+  --muted: #919191 !important;
+  --muted-2: #656565 !important;
+  --line: #1b1b1b !important;
+  --accent: #f2c85b !important;
+  --accent-dark: #d8ae3f !important;
+  --accent-soft: rgba(242, 200, 91, .11) !important;
+}
+
+html, body, .appRoot, .pageCanvas, .flowCanvas, .flowMode {
+  background: #000 !important;
+}
+
+body { color: var(--text) !important; }
+
+/* Absolutely no warm/brown panels. */
+.appHeader,
+.bottomBar,
+.sessionStrip,
+.marketFlat,
+.flatSellPage,
+.flatFlowPage,
+.messagesPage,
+.chatPage,
+.compactProfile,
+.flatProfilePage,
+.flatProfileHead,
+.flatBalance,
+.flatProfileStats,
+.flatProfileMenu,
+.compactProfileTop,
+.compactStatsLine,
+.compactRank,
+.compactProfileMenu,
+.flatInventorySection,
+.flatChooseItem,
+.flatListingForm,
+.flatSelectedItem,
+.flatPublishSummary,
+.flatSection,
+.flatRows,
+.flatSeller,
+.flatOfferForm,
+.flatNotice,
+.messageList,
+.messageRow,
+.chatHeader,
+.chatProductBar,
+.chatComposer,
+.dealsPage,
+.favoritesPage,
+.leaderboardPage {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/* Kill panel geometry on all non-product content. */
+.heroPanel,.marketSummary,.summaryTile,.searchPanel,.categoryStrip,.sortPanel,
+.collectionCard,.inventoryCard,.inventoryItem,.activeListingCard,.sellForm,.sellCard,
+.emptyPanel,.authGate,.walletCard,.rankCard,.profileHeroCard,.infoCard,.offerCard,
+.leaderList,.podiumCard,.dealCard,.dealSummaryGrid>div,.profileStatsGrid>div,
+.listingDetailCard,.listingInfoCard,.sellerCard,.historyCard,.actionCard,
+.flatAuth,.flatNotice,.flatSelectedItem,.flatPublishSummary {
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  border-left: 0 !important;
+  border-right: 0 !important;
+}
+
+/* Header and nav should feel like part of one black canvas. */
+.appHeader {
+  background: rgba(0,0,0,.96) !important;
+  border-bottom: 1px solid var(--line) !important;
+  backdrop-filter: blur(18px) !important;
+}
+.bottomBar {
+  background: rgba(0,0,0,.97) !important;
+  border-top: 1px solid var(--line) !important;
+  backdrop-filter: blur(18px) !important;
+}
+.bottomItem.active { border-top-color: var(--accent) !important; }
+.balanceButton,.connectButton,.avatarButton { background: transparent !important; }
+
+/* Search, filters and categories stay flat. */
+.marketSearchRow { border-bottom-color: var(--line) !important; }
+.flatSearch,.flatSort,.messageSearch {
+  background: transparent !important;
+  border-radius: 0 !important;
+}
+.flatCategory { background: transparent !important; border-radius: 0 !important; }
+.flatCategory.active { background: transparent !important; color: var(--text) !important; }
+
+/* PRODUCT TILES: the only card-like element in the product. Outer tile is transparent. */
+.flatGrid {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 22px 10px !important;
+}
+.flatListingCard,
+.listingCardProduct {
+  min-width: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+  transform: none !important;
+  transition: none !important;
+  animation: none !important;
+  text-decoration: none !important;
+}
+.flatListingCard:hover,
+.flatListingCard:active,
+.flatListingCard:focus,
+.listingCardProduct:hover,
+.listingCardProduct:active {
+  transform: none !important;
+  translate: none !important;
+  scale: 1 !important;
+  box-shadow: none !important;
+}
+.flatListingCard *,
+.listingCardProduct * {
+  animation: none !important;
+}
+.flatListingVisual {
+  position: relative !important;
+  width: 100% !important;
+  aspect-ratio: 1 / .92 !important;
+  overflow: hidden !important;
+  border: 1px solid #151515 !important;
+  border-radius: 14px !important;
+  background: #090909 !important;
+  transform: none !important;
+  transition: none !important;
+}
+.flatListingVisual .productImageMedia {
+  width: 100% !important;
+  height: 100% !important;
+  display: block !important;
+  object-fit: cover !important;
+  transform: none !important;
+  transition: none !important;
+}
+.flatListingVisual .productImageFallback {
+  width: 100% !important;
+  height: 100% !important;
+  display: grid !important;
+  place-items: center !important;
+  background: #090909 !important;
+  color: #5f5f5f !important;
+}
+.flatDealBadge {
+  top: 8px !important;
+  left: 8px !important;
+  padding: 5px 7px !important;
+  border: 0 !important;
+  border-radius: 7px !important;
+  background: var(--accent) !important;
+  color: #15120a !important;
+  font-size: 9px !important;
+  font-weight: 900 !important;
+}
+.flatListingContent { padding: 9px 1px 0 !important; background: transparent !important; }
+.flatListingContent .listingPrice {
+  font-size: 17px !important;
+  line-height: 1.08 !important;
+  font-weight: 900 !important;
+  letter-spacing: -.035em !important;
+  color: #fff !important;
+}
+.flatListingContent .listingCardTitle {
+  margin-top: 5px !important;
+  display: -webkit-box !important;
+  -webkit-box-orient: vertical !important;
+  -webkit-line-clamp: 2 !important;
+  overflow: hidden !important;
+  white-space: normal !important;
+  color: #e9e9e5 !important;
+  font-size: 12px !important;
+  line-height: 1.3 !important;
+  font-weight: 700 !important;
+}
+.listingMetaLine {
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 7px;
+  min-width: 0;
+  color: #747474;
+  font-size: 9px;
+  line-height: 1.2;
+}
+.listingMetaLine span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.listingMetaLine time { flex: 0 0 auto; color: #5e5e5e; }
+.flatListingContent .listingSubtitle,
+.flatListingContent .listingTime { display: none !important; }
+
+/* Inventory is a list. Tapping the whole available row opens publication flow. */
+.flatInventorySection > h2 {
+  background: transparent !important;
+  border-bottom: 1px solid var(--line) !important;
+}
+.flatInventoryRow {
+  background: transparent !important;
+  border-radius: 0 !important;
+  border-bottom: 1px solid var(--line) !important;
+  box-shadow: none !important;
+}
+.inventoryPublishRow {
+  color: inherit !important;
+  text-decoration: none !important;
+  cursor: pointer !important;
+}
+.inventoryPublishRow:active { opacity: .72; }
+.flatInventoryImage,.flatSelectedImage {
+  border: 1px solid #171717 !important;
+  border-radius: 9px !important;
+  background: #080808 !important;
+}
+.inventoryPublishChevron { color: #5f5f5f; display: grid; place-items: center; }
+
+/* Publication form is a page, not a card. */
+.flatListingForm,.flatChooseItem { background: #000 !important; }
+.flatFormField { border-bottom: 1px solid var(--line) !important; }
+.flatFormField input,.flatFormField textarea,.flatMoneyInput input {
+  background: transparent !important;
+  border-radius: 0 !important;
+  border-color: var(--line) !important;
+}
+.flatFlowBottom { background: rgba(0,0,0,.96) !important; border-top: 1px solid var(--line) !important; }
+
+/* Compact profile, no card islands. */
+.compactProfileTop,.compactStatsLine,.compactRank,.compactProfileMenu a {
+  background: transparent !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+.compactProfileAvatar,.messagePersonAvatar { background: #0d0d0d !important; }
+.compactRankTrack { background: #191919 !important; }
+
+/* Chat bubbles are the only other rounded surfaces because they carry conversation meaning. */
+.chatBubble.mine { background: var(--accent) !important; color: #15120a !important; }
+.chatBubble.theirs { background: #111 !important; color: var(--text) !important; }
+
+/* Remove legacy motion globally from tappable product UI. */
+@media (hover:hover) {
+  .flatListingCard:hover .flatListingVisual,
+  .listingCardProduct:hover .listingVisual,
+  .listingCardProduct:hover img {
+    transform: none !important;
+    scale: 1 !important;
+  }
+}
+
+@media (min-width: 640px) {
+  .flatGrid { grid-template-columns: repeat(3,minmax(0,1fr)) !important; gap: 26px 14px !important; }
+}
