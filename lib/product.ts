@@ -26,6 +26,11 @@ export type MarketListing = {
   image_license: string | null;
 };
 
+export type MarketCardListing = Pick<
+  MarketListing,
+  "id" | "title" | "price" | "created_at" | "condition" | "item_name" | "brand" | "category_id" | "base_value" | "image_url"
+>;
+
 export type PlayerProfile = {
   id: string;
   username: string | null;
