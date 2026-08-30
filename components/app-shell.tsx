@@ -6,13 +6,13 @@ import Icon, { type IconName } from "@/components/icon";
 import { useTelegramSession } from "@/components/telegram-session";
 import { rubles } from "@/lib/product";
 
-type NavItem = { href: string; label: string; icon: IconName; primary?: boolean };
+type NavItem = { href: string; label: string; icon: IconName };
 
 const navItems: readonly NavItem[] = [
-  { href: "/", label: "Поиск", icon: "search" },
+  { href: "/", label: "Рынок", icon: "search" },
   { href: "/favorites", label: "Избранное", icon: "heart" },
-  { href: "/sell", label: "Объявления", icon: "plus", primary: true },
-  { href: "/messages", label: "Сообщения", icon: "message" },
+  { href: "/sell", label: "Объявления", icon: "list" },
+  { href: "/messages", label: "Чаты", icon: "message" },
   { href: "/profile", label: "Профиль", icon: "user" },
 ];
 
@@ -32,15 +32,15 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </header>}
 
-      {session.state !== "verified" && session.state !== "checking" && !flowMode && <div className="sessionStrip"><span>Покупки и сообщения доступны в Telegram</span><button type="button" onClick={session.openBot}>Открыть</button></div>}
+      {session.state !== "verified" && session.state !== "checking" && !flowMode && <div className="sessionStrip"><span>Покупки и чаты доступны в Telegram</span><button type="button" onClick={session.openBot}>Открыть</button></div>}
 
       <main className={flowMode ? "pageCanvas flowCanvas" : "pageCanvas"}>{children}</main>
 
       {!flowMode && <nav className="bottomBar" aria-label="Навигация">
         {navItems.map((item) => {
           const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
-          return <Link key={item.href} href={item.href} className={`${item.primary ? "bottomItem sellNav" : "bottomItem"} ${active ? "active" : ""}`}>
-            <span className="bottomIcon"><Icon name={item.icon} size={item.primary ? 23 : 21} /></span><span>{item.label}</span>
+          return <Link key={item.href} href={item.href} className={`bottomItem ${active ? "active" : ""}`}>
+            <span className="bottomIcon"><Icon name={item.icon} size={21} /></span><span>{item.label}</span>
             {item.href === "/messages" && session.unreadChats > 0 && <i className="navUnread">{Math.min(session.unreadChats, 9)}</i>}
           </Link>;
         })}
