@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import Icon from "@/components/icon";
-import ProductImage from "@/components/product-image";
 import { useTelegramSession } from "@/components/telegram-session";
 import { relativeDate, rubles } from "@/lib/product";
 
@@ -13,13 +12,6 @@ type ItemType = { name: string; brand: string | null; image_url: string | null; 
 type InventoryJoin = { item_types: ItemType | ItemType[] | null };
 type ChatListing = { id: string; title: string; price: number | string; status: string; seller_id: string; inventory_items: InventoryJoin | InventoryJoin[] | null };
 type ThreadsResult = { profileId?: string; threads?: Thread[]; profiles?: ChatProfile[]; listings?: ChatListing[] };
-
-function getItemType(listing: ChatListing | undefined) {
-  if (!listing?.inventory_items) return null;
-  const inventory = Array.isArray(listing.inventory_items) ? listing.inventory_items[0] : listing.inventory_items;
-  if (!inventory?.item_types) return null;
-  return Array.isArray(inventory.item_types) ? inventory.item_types[0] ?? null : inventory.item_types;
-}
 
 export default function MessagesCenter() {
   const session = useTelegramSession();
@@ -36,15 +28,27 @@ export default function MessagesCenter() {
     if (!silent) setLoading(true);
     try {
       const result = await session.callChatAction("threads") as ThreadsResult;
-      setThreads(result.threads ?? []); setProfiles(result.profiles ?? []); setListings(result.listings ?? []); setProfileId(result.profileId ?? ""); setError(null);
-    } catch { setError("Не удалось загрузить сообщения"); }
-    finally { if (!silent) setLoading(false); }
+      setThreads(result.threads ?? []);
+      setProfiles(result.profiles ?? []);
+      setListings(result.listings ?? []);
+      setProfileId(result.profileId ?? "");
+      setError(null);
+    } catch {
+      setError("Не удалось загрузить чаты");
+    } finally {
+      if (!silent) setLoading(false);
+    }
   }
 
   useEffect(() => {
-    if (session.state !== "verified") { if (["browser","unavailable","error"].includes(session.state)) setLoading(false); return; }
+    if (session.state !== "verified") {
+      if (["browser", "unavailable", "error"].includes(session.state)) setLoading(false);
+      return;
+    }
     void load();
-    const timer = window.setInterval(() => { if (document.visibilityState === "visible") void load(true); }, 5000);
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === "visible") void load(true);
+    }, 5000);
     return () => window.clearInterval(timer);
   }, [session.state]);
 
@@ -55,29 +59,46 @@ export default function MessagesCenter() {
     if (!normalized) return threads;
     return threads.filter((thread) => {
       const otherId = thread.buyer_id === profileId ? thread.seller_id : thread.buyer_id;
-      const other = profileMap.get(otherId); const listing = listingMap.get(thread.listing_id);
-      return `${other?.first_name ?? ""} ${listing?.title ?? ""} ${thread.last_message_preview}`.toLocaleLowerCase("ru").includes(normalized);
+      const other = profileMap.get(otherId);
+      const listing = listingMap.get(thread.listing_id);
+      return `${other?.first_name ?? ""} ${other?.username ?? ""} ${listing?.title ?? ""} ${thread.last_message_preview}`.toLocaleLowerCase("ru").includes(normalized);
     });
   }, [threads, query, profileId, profileMap, listingMap]);
 
-  if (session.state !== "verified" && !loading) return <div className="flatAuth"><Icon name="message" size={32}/><strong>Сообщения доступны в Telegram</strong><button type="button" onClick={session.openBot}>Открыть TradeUP</button></div>;
+  if (session.state !== "verified" && !loading) {
+    return <div className="flatAuth"><Icon name="message" size={32}/><strong>Чаты доступны в Telegram</strong><button type="button" onClick={session.openBot}>Открыть TradeUP</button></div>;
+  }
 
   return (
     <div className="messagesPage">
-      <div className="flatPageTitle"><h1>Сообщения</h1></div>
-      <label className="messageSearch"><Icon name="search" size={18}/><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Поиск"/></label>
+      <div className="flatPageTitle"><h1>Чаты</h1></div>
+      <label className="messageSearch"><Icon name="search" size={18}/><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Поиск по людям и объявлениям"/></label>
+
       {loading && <div className="messageListSkeleton" />}
       {error && <div className="flatNotice">{error}</div>}
-      {!loading && !error && visible.length === 0 && <div className="flatEmpty messagesEmpty"><Icon name="message" size={30}/><strong>{threads.length ? "Ничего не найдено" : "Сообщений пока нет"}</strong><span>{threads.length ? "Измени запрос" : "Напиши продавцу из объявления"}</span></div>}
+      {!loading && !error && visible.length === 0 && (
+        <div className="flatEmpty messagesEmpty"><Icon name="message" size={30}/><strong>{threads.length ? "Ничего не найдено" : "Чатов пока нет"}</strong><span>{threads.length ? "Измени запрос" : "Открой объявление и напиши продавцу"}</span></div>
+      )}
+
       {!loading && visible.length > 0 && <div className="messageList">{visible.map((thread) => {
         const otherId = thread.buyer_id === profileId ? thread.seller_id : thread.buyer_id;
-        const other = profileMap.get(otherId); const listing = listingMap.get(thread.listing_id); const type = getItemType(listing);
+        const other = profileMap.get(otherId);
+        const listing = listingMap.get(thread.listing_id);
         const readAt = thread.buyer_id === profileId ? thread.buyer_read_at : thread.seller_read_at;
         const unread = Boolean(thread.last_message_at && thread.last_sender_id !== profileId && (!readAt || new Date(thread.last_message_at).getTime() > new Date(readAt).getTime()));
+        const initial = other?.first_name?.trim().charAt(0).toUpperCase() || "T";
+
         return <Link href={`/messages/${thread.id}`} className={unread ? "messageRow unread" : "messageRow"} key={thread.id}>
-          <div className="messageThumb"><ProductImage src={type?.image_url} alt={type?.name ?? listing?.title ?? "Товар"} categoryId={type?.category_id ?? ""}/></div>
-          <div className="messageMain"><div className="messageNameLine"><strong>{other?.first_name ?? "Пользователь"}</strong><time>{thread.last_message_at ? relativeDate(thread.last_message_at) : ""}</time></div><div className="messageListingLine">{listing?.title ?? "Объявление"}{listing ? ` · ${rubles(listing.price)}` : ""}</div><div className="messagePreview">{thread.last_message_preview || "Начните переписку"}</div></div>
-          {unread && <i className="messageUnreadDot" />}
+          <div className="messagePersonAvatar">
+            {other?.photo_url ? <img src={other.photo_url} alt=""/> : <span>{initial}</span>}
+            {other?.is_online && <i />}
+          </div>
+          <div className="messageMain">
+            <div className="messageNameLine"><strong>{other?.first_name ?? "Пользователь"}</strong><time>{thread.last_message_at ? relativeDate(thread.last_message_at) : ""}</time></div>
+            <div className="messagePreview">{thread.last_message_preview || "Начните переписку"}</div>
+            <div className="messageListingLine">{listing?.title ?? "Объявление"}{listing ? ` · ${rubles(listing.price)}` : ""}</div>
+          </div>
+          {unread && <i className="messageUnreadBadge">1</i>}
         </Link>;
       })}</div>}
     </div>
