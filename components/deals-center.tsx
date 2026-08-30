@@ -1,97 +1,66 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Icon, { categoryIconName } from "@/components/icon";
 import { useTelegramSession } from "@/components/telegram-session";
 import { categoryMeta, relativeDate, rubles } from "@/lib/product";
 
-type TradeRow = { id: string; listing_id: string; item_id: string; seller_id: string; buyer_id: string; amount: number | string; fee: number | string; seller_profit: number | string | null; completed_at: string };
-type ItemRow = { id: string; item_types: { name: string; brand: string | null; category_id: string } | null };
-type ListingRow = { id: string; title: string };
-type DealsResult = { ok?: boolean; trades?: TradeRow[]; items?: ItemRow[]; listings?: ListingRow[] };
-type OfferRow = { id: string; listing_id: string; buyer_id: string; amount: number | string; status: "pending" | "accepted" | "declined" | "cancelled" | "expired"; created_at: string; updated_at: string };
-type OfferListing = { id: string; title: string; price: number | string; status: string; seller_id: string };
-type OfferProfile = { id: string; username: string | null; first_name: string; photo_url: string | null; rating: number; deals_count: number };
-type OffersResult = { ok?: boolean; incoming?: OfferRow[]; outgoing?: OfferRow[]; listings?: OfferListing[]; profiles?: OfferProfile[] };
-type Filter = "all" | "buy" | "sell" | "offers";
+type TradeRow={id:string;listing_id:string;item_id:string;seller_id:string;buyer_id:string;amount:number|string;fee:number|string;seller_profit:number|string|null;completed_at:string};
+type ItemRow={id:string;item_types:{name:string;brand:string|null;category_id:string}|null};
+type ListingRow={id:string;title:string};
+type DealsResult={trades?:TradeRow[];items?:ItemRow[];listings?:ListingRow[]};
+type OfferStatus="pending"|"countered"|"accepted"|"declined"|"cancelled"|"expired";
+type OfferRow={id:string;listing_id:string;buyer_id:string;amount:number|string;status:OfferStatus;created_by_id:string;parent_offer_id:string|null;expires_at:string;is_final:boolean;created_at:string;updated_at:string};
+type OfferListing={id:string;title:string;price:number|string;status:string;seller_id:string;created_at:string};
+type OfferProfile={id:string;first_name:string;username:string|null;photo_url:string|null;rating:number;deals_count:number;last_seen_at:string;is_online:boolean};
+type NegotiationResult={profileId?:string;offers?:OfferRow[];listings?:OfferListing[];profiles?:OfferProfile[]};
+type RatingRow={trade_id:string;rater_id:string;target_id:string;positive:boolean;created_at:string};
+type Filter="all"|"buy"|"sell"|"offers";
 
-const offerStatusLabel: Record<OfferRow["status"], string> = { pending: "Ждёт ответа", accepted: "Принято", declined: "Отклонено", cancelled: "Отменено", expired: "Закрыто" };
+const statusLabel:Record<OfferStatus,string>={pending:"Идёт торг",countered:"Встречная цена",accepted:"Сделка",declined:"Отклонено",cancelled:"Отменено",expired:"Истекло"};
+function left(value:string){const ms=new Date(value).getTime()-Date.now();if(ms<=0)return "время вышло";const min=Math.ceil(ms/60000);if(min<60)return `${min} мин`;return `${Math.ceil(min/60)} ч`;}
 
-export default function DealsCenter() {
-  const session = useTelegramSession();
-  const [trades, setTrades] = useState<TradeRow[]>([]);
-  const [items, setItems] = useState<ItemRow[]>([]);
-  const [listings, setListings] = useState<ListingRow[]>([]);
-  const [incoming, setIncoming] = useState<OfferRow[]>([]);
-  const [outgoing, setOutgoing] = useState<OfferRow[]>([]);
-  const [offerListings, setOfferListings] = useState<OfferListing[]>([]);
-  const [offerProfiles, setOfferProfiles] = useState<OfferProfile[]>([]);
-  const [filter, setFilter] = useState<Filter>("all");
-  const [loading, setLoading] = useState(true);
-  const [actionId, setActionId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+export default function DealsCenter(){
+ const session=useTelegramSession();
+ const[trades,setTrades]=useState<TradeRow[]>([]),[items,setItems]=useState<ItemRow[]>([]),[listings,setListings]=useState<ListingRow[]>([]);
+ const[offers,setOffers]=useState<OfferRow[]>([]),[offerListings,setOfferListings]=useState<OfferListing[]>([]),[offerProfiles,setOfferProfiles]=useState<OfferProfile[]>([]),[ratings,setRatings]=useState<RatingRow[]>([]);
+ const[filter,setFilter]=useState<Filter>("all"),[loading,setLoading]=useState(true),[actionId,setActionId]=useState<string|null>(null),[error,setError]=useState<string|null>(null),[counterId,setCounterId]=useState<string|null>(null),[counterAmount,setCounterAmount]=useState(""),[finalPrice,setFinalPrice]=useState(false);
 
-  async function loadAll() {
-    const [dealsRaw, offersRaw] = await Promise.all([session.callAction("deals"), session.callAction("offers")]);
-    const deals = dealsRaw as DealsResult;
-    const offers = offersRaw as OffersResult;
-    setTrades(deals.trades ?? []); setItems(deals.items ?? []); setListings(deals.listings ?? []);
-    setIncoming(offers.incoming ?? []); setOutgoing(offers.outgoing ?? []); setOfferListings(offers.listings ?? []); setOfferProfiles(offers.profiles ?? []);
-  }
+ const social=useCallback(async(action:string,payload:Record<string,unknown>={})=>{const initData=window.Telegram?.WebApp?.initData??"";if(!initData)throw new Error("telegram_required");const response=await fetch("/api/social-market",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({initData,action,payload}),cache:"no-store"});const result=await response.json() as Record<string,unknown>&{ok?:boolean;error?:string};if(!response.ok||!result.ok)throw new Error(result.error??"request_failed");return result;},[]);
+ const loadAll=useCallback(async()=>{const[dealsRaw,negRaw]=await Promise.all([session.callAction("deals"),social("negotiations")]);const deals=dealsRaw as DealsResult,neg=negRaw as NegotiationResult;const nextTrades=deals.trades??[];setTrades(nextTrades);setItems(deals.items??[]);setListings(deals.listings??[]);setOffers(neg.offers??[]);setOfferListings(neg.listings??[]);setOfferProfiles(neg.profiles??[]);if(nextTrades.length){const ratingRaw=await social("ratings",{tradeIds:nextTrades.map(t=>t.id)});setRatings((ratingRaw.ratings??[]) as RatingRow[]);}else setRatings([]);},[session,social]);
+ useEffect(()=>{if(session.state!=="verified"){if(["browser","unavailable","error"].includes(session.state))setLoading(false);return;}setLoading(true);void loadAll().catch(e=>setError(e instanceof Error?e.message:"Не удалось загрузить сделки")).finally(()=>setLoading(false));},[session.state,loadAll]);
 
-  useEffect(() => {
-    if (session.state !== "verified") { if (["browser", "unavailable", "error"].includes(session.state)) setLoading(false); return; }
-    setLoading(true);
-    void loadAll().catch((reason) => setError(reason instanceof Error ? reason.message : "Не удалось загрузить сделки")).finally(() => setLoading(false));
-  }, [session.state]);
+ const itemMap=useMemo(()=>new Map(items.map(x=>[x.id,x])),[items]),listingMap=useMemo(()=>new Map(listings.map(x=>[x.id,x])),[listings]),offerListingMap=useMemo(()=>new Map(offerListings.map(x=>[x.id,x])),[offerListings]),profileMap=useMemo(()=>new Map(offerProfiles.map(x=>[x.id,x])),[offerProfiles]),offerMap=useMemo(()=>new Map(offers.map(x=>[x.id,x])),[offers]),ratingMap=useMemo(()=>new Map(ratings.map(x=>[x.trade_id,x])),[ratings]);
+ const visible=trades.filter(t=>filter==="buy"?t.buyer_id===session.profile?.id:filter==="sell"?t.seller_id===session.profile?.id:true);const activeOffers=offers.filter(o=>o.status==="pending").sort((a,b)=>new Date(b.updated_at).getTime()-new Date(a.updated_at).getTime());const historyOffers=offers.filter(o=>o.status!=="pending").sort((a,b)=>new Date(b.updated_at).getTime()-new Date(a.updated_at).getTime()).slice(0,30);const soldCount=trades.filter(t=>t.seller_id===session.profile?.id).length,boughtCount=trades.filter(t=>t.buyer_id===session.profile?.id).length,pendingCount=activeOffers.length;
+ function chain(offer:OfferRow){const result:OfferRow[]=[];let current:OfferRow|undefined=offer;const seen=new Set<string>();while(current&&!seen.has(current.id)){seen.add(current.id);result.unshift(current);current=current.parent_offer_id?offerMap.get(current.parent_offer_id):undefined;}return result;}
+ async function respond(offerId:string,accept:boolean){setActionId(offerId);setError(null);try{await session.callDepthAction("respond_offer",{offerId,accept});setCounterId(null);await loadAll();}catch(e){const code=e instanceof Error?e.message:"";setError(code==="insufficient_funds"?"У покупателя больше не хватает денег":code==="offer_not_pending"?"Этот ход уже закрыт":code||"Не удалось обработать предложение");}finally{setActionId(null);}}
+ async function counter(offer:OfferRow){const amount=Number(counterAmount);if(!amount)return;setActionId(offer.id);setError(null);try{await session.callDepthAction("counter_offer",{offerId:offer.id,amount,expiresMinutes:120,isFinal:finalPrice});setCounterId(null);setCounterAmount("");setFinalPrice(false);await loadAll();}catch(e){const code=e instanceof Error?e.message:"";setError(code==="insufficient_funds"?"Недостаточно средств":code==="invalid_offer_amount"?"Цена вне допустимого диапазона":code||"Встречная цена не отправлена");}finally{setActionId(null);}}
+ async function cancelOffer(id:string){setActionId(id);try{await session.callAction("cancel_offer",{offerId:id});await loadAll();}catch{setError("Не удалось отменить предложение");}finally{setActionId(null);}}
+ async function rate(tradeId:string,positive:boolean){setActionId(`rate-${tradeId}`);try{await session.callDepthAction("rate_trade",{tradeId,positive});const ratingRaw=await social("ratings",{tradeIds:trades.map(t=>t.id)});setRatings((ratingRaw.ratings??[]) as RatingRow[]);}catch{setError("Не удалось сохранить оценку");}finally{setActionId(null);}}
 
-  const itemMap = useMemo(() => new Map(items.map((item) => [item.id, item])), [items]);
-  const listingMap = useMemo(() => new Map(listings.map((listing) => [listing.id, listing])), [listings]);
-  const offerListingMap = useMemo(() => new Map(offerListings.map((listing) => [listing.id, listing])), [offerListings]);
-  const offerProfileMap = useMemo(() => new Map(offerProfiles.map((profile) => [profile.id, profile])), [offerProfiles]);
-  const visible = trades.filter((trade) => filter === "buy" ? trade.buyer_id === session.profile?.id : filter === "sell" ? trade.seller_id === session.profile?.id : true);
-  const soldCount = trades.filter((trade) => trade.seller_id === session.profile?.id).length;
-  const boughtCount = trades.filter((trade) => trade.buyer_id === session.profile?.id).length;
-  const pendingCount = [...incoming, ...outgoing].filter((offer) => offer.status === "pending").length;
+ if(session.state!=="verified"&&!loading)return <div className="authGate compactGate"><div className="authGateIcon"><Icon name="swap"/></div><span className="sectionEyebrow">Сделки</span><h1>История оборота</h1><p>Торг и история привязаны к Telegram-профилю.</p><button className="primaryAction" onClick={session.openBot}>Открыть TradeUP</button></div>;
+ return <div className="dealsPage negotiationPage">
+  <div className="pageHeadline"><div><span className="sectionEyebrow">Сделки</span><h1>Твой оборот</h1><p>Здесь цена рождается в переговорах с реальными игроками.</p></div>{pendingCount>0&&<div className="pendingCounter"><strong>{pendingCount}</strong><span>активных</span></div>}</div>
+  <div className="dealSummaryGrid"><div><span>Куплено</span><strong>{boughtCount}</strong></div><div><span>Продано</span><strong>{soldCount}</strong></div><div><span>Прибыль</span><strong className={Number(session.profile?.total_profit??0)>=0?"profitPositive":"profitNegative"}>{rubles(session.profile?.total_profit??0)}</strong></div></div>
+  <div className="segmentedTabs dealsTabs"><button className={filter==="all"?"active":""} onClick={()=>setFilter("all")}>Все</button><button className={filter==="buy"?"active":""} onClick={()=>setFilter("buy")}>Покупки</button><button className={filter==="sell"?"active":""} onClick={()=>setFilter("sell")}>Продажи</button><button className={filter==="offers"?"active":""} onClick={()=>setFilter("offers")}>Торг {pendingCount>0&&<i>{pendingCount}</i>}</button></div>
+  {loading&&<div className="dealList">{Array.from({length:4}).map((_,i)=><div className="dealRowSkeleton" key={i}/>)}</div>}{error&&<div className="actionMessage">{error}</div>}
 
-  async function respond(offerId: string, accept: boolean) {
-    setActionId(offerId); setError(null);
-    try { await session.callAction("respond_offer", { offerId, accept }); await loadAll(); }
-    catch (reason) { const code = reason instanceof Error ? reason.message : "game_action_failed"; setError(code === "insufficient_funds" ? "У покупателя уже не хватает денег" : code === "offer_not_pending" ? "Предложение уже закрыто" : "Не удалось обработать предложение"); }
-    finally { setActionId(null); }
-  }
+  {!loading&&filter==="offers"&&<div className="negotiationList">
+   <div className="negotiationHeading"><div><span>Активные переговоры</span><h2>{activeOffers.length?"Ваш ход или ответ другой стороны":"Пока тихо"}</h2></div></div>
+   {activeOffers.map(offer=>{const listing=offerListingMap.get(offer.listing_id),sellerId=listing?.seller_id??"",buyer=profileMap.get(offer.buyer_id),seller=profileMap.get(sellerId),me=session.profile?.id??"",creator=profileMap.get(offer.created_by_id),myTurn=offer.created_by_id!==me,isBuyer=offer.buyer_id===me,other=isBuyer?seller:buyer,steps=chain(offer),suggested=Math.round((Number(offer.amount)+Number(listing?.price??offer.amount))/2);return <section className="negotiationRow" key={offer.id}>
+    <div className="negotiationTop"><div><Link href={`/listing/${offer.listing_id}`}>{listing?.title??"Объявление"}</Link><span>{other?.first_name??"Игрок"} · {other?.deals_count??0} сделок</span></div><div className={myTurn?"turnBadge mine":"turnBadge"}>{myTurn?"Твой ход":"Ждём ответ"}</div></div>
+    <div className="negotiationCurrent"><div><span>{creator?.first_name??(offer.created_by_id===me?"Ты":"Игрок")} предложил</span><strong>{rubles(offer.amount)}</strong></div><div><span>{offer.is_final?"Финальная цена":"Действует"}</span><strong>{offer.is_final?"без торга":left(offer.expires_at)}</strong></div></div>
+    {steps.length>1&&<div className="negotiationTimeline">{steps.map((s,index)=><div key={s.id} className={s.id===offer.id?"current":""}><span>{index+1}</span><strong>{rubles(s.amount)}</strong><small>{profileMap.get(s.created_by_id)?.first_name??"Игрок"}</small></div>)}</div>}
+    {counterId===offer.id&&<div className="counterEditor"><label>Встречная цена<div><input value={counterAmount} onChange={e=>setCounterAmount(e.target.value.replace(/\D/g,""))} inputMode="numeric" placeholder={String(suggested)}/><b>₽</b></div></label><label className="finalToggle"><input type="checkbox" checked={finalPrice} onChange={e=>setFinalPrice(e.target.checked)}/><span>Финальная цена</span></label><div><button onClick={()=>void counter(offer)} disabled={actionId===offer.id||!counterAmount}>Отправить</button><button onClick={()=>{setCounterId(null);setCounterAmount("");setFinalPrice(false);}}>Отмена</button></div></div>}
+    {myTurn&&counterId!==offer.id&&<div className="negotiationActions"><button className="acceptOffer" disabled={actionId===offer.id} onClick={()=>void respond(offer.id,true)}>Принять {rubles(offer.amount)}</button>{!offer.is_final&&<button className="counterOffer" onClick={()=>{setCounterId(offer.id);setCounterAmount(String(suggested));}}>Встречная цена</button>}<button className="declineOffer" disabled={actionId===offer.id} onClick={()=>void respond(offer.id,false)}>Отклонить</button></div>}
+    {!myTurn&&isBuyer&&<button className="cancelOfferButton" disabled={actionId===offer.id} onClick={()=>void cancelOffer(offer.id)}>Отменить свой ход</button>}
+   </section>;})}
+   {!activeOffers.length&&<div className="miniEmpty">Предложи цену в объявлении или дождись торга по своему товару.</div>}
+   {historyOffers.length>0&&<details className="negotiationHistory"><summary>История переговоров · {historyOffers.length}</summary>{historyOffers.map(o=><div key={o.id}><span>{offerListingMap.get(o.listing_id)?.title??"Лот"}</span><strong>{rubles(o.amount)}</strong><small>{statusLabel[o.status]} · {relativeDate(o.updated_at)}</small></div>)}</details>}
+  </div>}
 
-  async function cancelOffer(offerId: string) {
-    setActionId(offerId); setError(null);
-    try { await session.callAction("cancel_offer", { offerId }); await loadAll(); }
-    catch { setError("Не удалось отменить предложение"); }
-    finally { setActionId(null); }
-  }
-
-  if (session.state !== "verified" && !loading) {
-    return <div className="authGate compactGate"><div className="authGateIcon"><Icon name="swap" /></div><span className="sectionEyebrow">Сделки</span><h1>История оборота</h1><p>Покупки, продажи, торг и маржа привязаны к Telegram-профилю.</p><button type="button" className="primaryAction" onClick={session.openBot}>Открыть TradeUP</button></div>;
-  }
-
-  return <div className="dealsPage">
-    <div className="pageHeadline"><div><span className="sectionEyebrow">Сделки</span><h1>Твой оборот</h1><p>Покупки, продажи и предложения цены в одном месте.</p></div>{pendingCount > 0 && <div className="pendingCounter"><strong>{pendingCount}</strong><span>ждут ответа</span></div>}</div>
-    <div className="dealSummaryGrid"><div><span>Куплено</span><strong>{boughtCount}</strong></div><div><span>Продано</span><strong>{soldCount}</strong></div><div><span>Общая прибыль</span><strong className={Number(session.profile?.total_profit ?? 0) >= 0 ? "profitPositive" : "profitNegative"}>{rubles(session.profile?.total_profit ?? 0)}</strong></div></div>
-    <div className="segmentedTabs dealsTabs"><button type="button" className={filter === "all" ? "active" : ""} onClick={() => setFilter("all")}>Все</button><button type="button" className={filter === "buy" ? "active" : ""} onClick={() => setFilter("buy")}>Покупки</button><button type="button" className={filter === "sell" ? "active" : ""} onClick={() => setFilter("sell")}>Продажи</button><button type="button" className={filter === "offers" ? "active" : ""} onClick={() => setFilter("offers")}>Торг {pendingCount > 0 && <i>{pendingCount}</i>}</button></div>
-    {loading && <div className="dealList">{Array.from({ length: 4 }).map((_, index) => <div className="dealRowSkeleton" key={index} />)}</div>}
-    {error && <div className="actionMessage">{error}</div>}
-
-    {!loading && filter === "offers" && <div className="offersLayout">
-      <section className="offersColumn"><div className="offersHeading"><div><span className="sectionEyebrow">Входящие</span><h2>Тебе предлагают</h2></div><strong>{incoming.filter((offer) => offer.status === "pending").length}</strong></div>
-        {incoming.length === 0 && <div className="miniEmpty">На твои лоты пока никто не торгуется.</div>}
-        {incoming.map((offer) => { const listing = offerListingMap.get(offer.listing_id); const buyer = offerProfileMap.get(offer.buyer_id); const discount = listing ? Math.round((1 - Number(offer.amount) / Number(listing.price)) * 100) : 0; return <article className={`offerCard status-${offer.status}`} key={`in-${offer.id}`}><div className="offerTop"><span className={`offerStatus ${offer.status}`}>{offerStatusLabel[offer.status]}</span><small>{relativeDate(offer.updated_at)}</small></div><Link href={`/listing/${offer.listing_id}`}><h3>{listing?.title ?? "Лот"}</h3></Link><div className="offerMoney"><strong>{rubles(offer.amount)}</strong>{listing && <span>{discount > 0 ? `−${discount}%` : ""} от {rubles(listing.price)}</span>}</div><div className="offerPerson"><span className="sellerMiniAvatar">{buyer?.first_name?.charAt(0).toUpperCase() ?? "?"}</span><div><strong>{buyer?.first_name ?? "Покупатель"}</strong><small className="sellerRating"><Icon name="star" size={10} />{buyer?.rating ?? 1000} · {buyer?.deals_count ?? 0} сделок</small></div></div>{offer.status === "pending" && <div className="offerActions"><button type="button" className="acceptOffer" disabled={actionId === offer.id} onClick={() => void respond(offer.id, true)}>Принять</button><button type="button" className="declineOffer" disabled={actionId === offer.id} onClick={() => void respond(offer.id, false)}>Отклонить</button></div>}</article>; })}
-      </section>
-      <section className="offersColumn"><div className="offersHeading"><div><span className="sectionEyebrow">Исходящие</span><h2>Ты предлагаешь</h2></div><strong>{outgoing.filter((offer) => offer.status === "pending").length}</strong></div>
-        {outgoing.length === 0 && <div className="miniEmpty">Ты ещё не предлагал свою цену продавцам.</div>}
-        {outgoing.map((offer) => { const listing = offerListingMap.get(offer.listing_id); return <article className={`offerCard status-${offer.status}`} key={`out-${offer.id}`}><div className="offerTop"><span className={`offerStatus ${offer.status}`}>{offerStatusLabel[offer.status]}</span><small>{relativeDate(offer.updated_at)}</small></div><Link href={`/listing/${offer.listing_id}`}><h3>{listing?.title ?? "Лот"}</h3></Link><div className="offerMoney"><strong>{rubles(offer.amount)}</strong>{listing && <span>Цена лота {rubles(listing.price)}</span>}</div>{offer.status === "pending" && <button type="button" className="cancelOfferButton" disabled={actionId === offer.id} onClick={() => void cancelOffer(offer.id)}>Отменить предложение</button>}</article>; })}
-      </section>
-    </div>}
-
-    {!loading && filter !== "offers" && !error && visible.length === 0 && <div className="emptyPanel"><div className="emptySymbol"><Icon name="history" /></div><h3>Сделок пока нет</h3><p>Купи первый лот, предложи цену или выстави предмет из инвентаря.</p><Link href="/" className="primaryAction">Перейти на рынок</Link></div>}
-    {!loading && filter !== "offers" && visible.length > 0 && <div className="dealList">{visible.map((trade) => { const isSale = trade.seller_id === session.profile?.id; const item = itemMap.get(trade.item_id)?.item_types; const listing = listingMap.get(trade.listing_id); const meta = categoryMeta[item?.category_id ?? ""] ?? { short: "Товар", icon: "" }; const profit = Number(trade.seller_profit ?? 0); return <article className="dealRow" key={trade.id}><div className={`dealIcon category-${item?.category_id ?? "other"}`}><Icon name={categoryIconName(item?.category_id ?? "")} size={24} /></div><div className="dealMain"><div className="dealTypeLine"><span className={isSale ? "dealType sale" : "dealType buy"}>{isSale ? "Продажа" : "Покупка"}</span><small>{relativeDate(trade.completed_at)}</small></div><h3>{listing?.title ?? item?.name ?? "Товар"}</h3><p>{item?.brand ?? meta.short}</p></div><div className="dealAmount"><strong>{isSale ? "+" : "−"}{rubles(trade.amount)}</strong>{isSale && <span className={profit >= 0 ? "profitPositive" : "profitNegative"}>{profit >= 0 ? "+" : ""}{rubles(profit)} маржа</span>}</div></article>; })}</div>}
-  </div>;
+  {!loading&&filter!=="offers"&&!error&&visible.length===0&&<div className="emptyPanel"><div className="emptySymbol"><Icon name="history"/></div><h3>Сделок пока нет</h3><p>Купи первый лот, предложи цену или выстави предмет.</p><Link href="/" className="primaryAction">Перейти на рынок</Link></div>}
+  {!loading&&filter!=="offers"&&visible.length>0&&<div className="dealList">{visible.map(trade=>{const isSale=trade.seller_id===session.profile?.id,item=itemMap.get(trade.item_id)?.item_types,listing=listingMap.get(trade.listing_id),meta=categoryMeta[item?.category_id??""]??{short:"Товар",icon:""},profit=Number(trade.seller_profit??0),rating=ratingMap.get(trade.id);return <article className="dealRow ratedDeal" key={trade.id}><div className={`dealIcon category-${item?.category_id??"other"}`}><Icon name={categoryIconName(item?.category_id??"")} size={24}/></div><div className="dealMain"><div className="dealTypeLine"><span className={isSale?"dealType sale":"dealType buy"}>{isSale?"Продажа":"Покупка"}</span><small>{relativeDate(trade.completed_at)}</small></div><h3>{listing?.title??item?.name??"Товар"}</h3><p>{item?.brand??meta.short}</p><div className="tradeRating"><span>{rating?"Оценка сделки":"Как прошла сделка?"}</span><button className={rating?.positive===true?"active":""} disabled={actionId===`rate-${trade.id}`} onClick={()=>void rate(trade.id,true)} aria-label="Хорошо">👍</button><button className={rating?.positive===false?"active bad":""} disabled={actionId===`rate-${trade.id}`} onClick={()=>void rate(trade.id,false)} aria-label="Плохо">👎</button></div></div><div className="dealAmount"><strong>{isSale?"+":"−"}{rubles(trade.amount)}</strong>{isSale&&<span className={profit>=0?"profitPositive":"profitNegative"}>{profit>=0?"+":""}{rubles(profit)} маржа</span>}</div></article>;})}</div>}
+ </div>;
 }
