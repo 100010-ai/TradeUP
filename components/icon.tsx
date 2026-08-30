@@ -5,7 +5,7 @@ export type IconName =
   | "phone" | "computer" | "gamepad" | "sneaker" | "watch" | "collectible" | "package"
   | "arrowUp" | "arrowLeft" | "arrowRight" | "chevronRight" | "close" | "star"
   | "wallet" | "inventory" | "trophy" | "bot" | "tag" | "history" | "trend"
-  | "check" | "info" | "sparkles";
+  | "check" | "info" | "sparkles" | "message" | "send" | "more" | "edit" | "list";
 
 type IconProps = SVGProps<SVGSVGElement> & { name: IconName; size?: number };
 
@@ -41,6 +41,11 @@ const p: Record<IconName, ReactNode> = {
   check: <path d="m5 12 4 4 10-10"/>,
   info: <><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7h.01"/></>,
   sparkles: <><path d="m12 3 1.3 3.7L17 8l-3.7 1.3L12 13l-1.3-3.7L7 8l3.7-1.3L12 3Z"/><path d="m5 14 .8 2.2L8 17l-2.2.8L5 20l-.8-2.2L2 17l2.2-.8L5 14ZM19 12l.6 1.4L21 14l-1.4.6L19 16l-.6-1.4L17 14l1.4-.6L19 12Z"/></>,
+  message: <><path d="M4 5.5h16v11H9l-5 4v-15Z"/><path d="M8 10h8M8 13h5"/></>,
+  send: <><path d="m3 11 17-8-6 18-3-7-8-3Z"/><path d="m11 14 9-11"/></>,
+  more: <><circle cx="5" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1" fill="currentColor" stroke="none"/></>,
+  edit: <><path d="m4 17-.8 3.8L7 20l11-11-3-3L4 17Z"/><path d="m13.5 7.5 3 3"/></>,
+  list: <><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4" cy="6" r="1" fill="currentColor" stroke="none"/><circle cx="4" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="4" cy="18" r="1" fill="currentColor" stroke="none"/></>,
 };
 
 export function categoryIconName(categoryId: string): IconName {
@@ -54,9 +59,5 @@ export function categoryIconName(categoryId: string): IconName {
 }
 
 export default function Icon({ name, size = 22, ...props }: IconProps) {
-  return (
-    <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...props}>
-      {p[name]}
-    </svg>
-  );
+  return <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...props}>{p[name]}</svg>;
 }

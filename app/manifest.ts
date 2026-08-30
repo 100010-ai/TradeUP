@@ -4,11 +4,11 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "TradeUP",
     short_name: "TradeUP",
-    description: "Онлайн-игра про виртуальное перекупство",
+    description: "Онлайн-рынок виртуального перекупства",
     start_url: "/",
     display: "standalone",
-    background_color: "#f6f6f4",
-    theme_color: "#f6f6f4",
+    background_color: "#11110f",
+    theme_color: "#11110f",
     orientation: "portrait",
   };
 }
