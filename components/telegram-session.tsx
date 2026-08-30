@@ -103,8 +103,11 @@ export function TelegramSessionProvider({ children }: { children: React.ReactNod
   const refreshUnreadChats = useCallback(async () => {
     if (!getInitData() || unreadRequestInFlight.current) return;
     unreadRequestInFlight.current = true;
-    try { setUnreadChats(countUnread(await request("/api/chat", "threads"))); }
-    catch { /* non-critical badge */ }
+    try {
+      const result = await request("/api/chat", "unread_count");
+      const unread = Number(result.unread);
+      if (Number.isFinite(unread)) setUnreadChats(Math.max(0, Math.floor(unread)));
+    } catch { /* non-critical badge */ }
     finally { unreadRequestInFlight.current = false; }
   }, [request]);
 
@@ -122,6 +125,10 @@ export function TelegramSessionProvider({ children }: { children: React.ReactNod
   const callChatAction = useCallback(async (action: string, payload: Record<string, unknown> = {}) => {
     const result = await request("/api/chat", action, payload);
     if (action === "threads") setUnreadChats(countUnread(result));
+    if (action === "unread_count") {
+      const unread = Number(result.unread);
+      if (Number.isFinite(unread)) setUnreadChats(Math.max(0, Math.floor(unread)));
+    }
     if (["mark_read", "send_message", "open_system_chat", "support_choose_topic", "support_request_human", "support_send_message"].includes(action)) void refreshUnreadChats();
     return result;
   }, [refreshUnreadChats, request]);
