@@ -5,7 +5,7 @@ export type IconName =
   | "phone" | "computer" | "gamepad" | "sneaker" | "watch" | "collectible" | "package"
   | "arrowUp" | "arrowLeft" | "arrowRight" | "chevronRight" | "close" | "star"
   | "wallet" | "inventory" | "trophy" | "bot" | "tag" | "history" | "trend"
-  | "check" | "info" | "sparkles" | "message" | "send" | "more" | "edit" | "list";
+  | "check" | "info" | "sparkles" | "message" | "send" | "more" | "edit" | "list" | "bell";
 
 type IconProps = SVGProps<SVGSVGElement> & { name: IconName; size?: number };
 
@@ -46,6 +46,7 @@ const p: Record<IconName, ReactNode> = {
   more: <><circle cx="5" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1" fill="currentColor" stroke="none"/></>,
   edit: <><path d="m4 17-.8 3.8L7 20l11-11-3-3L4 17Z"/><path d="m13.5 7.5 3 3"/></>,
   list: <><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4" cy="6" r="1" fill="currentColor" stroke="none"/><circle cx="4" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="4" cy="18" r="1" fill="currentColor" stroke="none"/></>,
+  bell: <><path d="M6.5 10a5.5 5.5 0 0 1 11 0v4l2 3H4.5l2-3v-4Z"/><path d="M10 20h4"/></>,
 };
 
 export function categoryIconName(categoryId: string): IconName {
