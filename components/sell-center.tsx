@@ -68,11 +68,11 @@ export default function SellCenter() {
           {available.length === 0 && <div className="flatInlineEmpty">Нет свободных предметов</div>}
           {available.map((item) => {
             const type = item.item_types;
-            return <div className="flatInventoryRow" key={item.id}>
-              <div className="flatInventoryImage"><ProductImage src={type?.image_url} alt={type?.name ?? "Предмет"} categoryId={type?.category_id ?? ""}/></div>
-              <div className="flatInventoryMain"><strong>{type?.name ?? "Предмет"}</strong><span>{conditionLabel(item.condition)} · куплен за {rubles(item.acquired_price)}</span></div>
-              <Link href={`/sell/new?item=${item.id}`} className="flatRowPrimary">Разместить</Link>
-            </div>;
+            return <Link href={`/sell/new?item=${item.id}`} className="flatInventoryRow inventoryPublishRow" key={item.id}>
+              <span className="flatInventoryImage"><ProductImage src={type?.image_url} alt={type?.name ?? "Предмет"} categoryId={type?.category_id ?? ""}/></span>
+              <span className="flatInventoryMain"><strong>{type?.name ?? "Предмет"}</strong><span>{conditionLabel(item.condition)} · куплен за {rubles(item.acquired_price)}</span></span>
+              <span className="inventoryPublishChevron"><Icon name="chevronRight" size={18}/></span>
+            </Link>;
           })}
         </section>
       )}
