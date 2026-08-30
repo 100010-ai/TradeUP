@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { supabasePublic } from "@/lib/supabase/public";
+import { getSupabasePublic } from "@/lib/supabase/public";
 
 type Category = {
   id: string;
@@ -55,6 +55,7 @@ const money = new Intl.NumberFormat("ru-RU", {
 });
 
 export default function Market() {
+  const supabase = useMemo(() => getSupabasePublic(), []);
   const [categories, setCategories] = useState<Category[]>([]);
   const [listings, setListings] = useState<Listing[]>([]);
   const [query, setQuery] = useState("");
@@ -66,9 +67,13 @@ export default function Market() {
   const [telegramState, setTelegramState] = useState<TelegramState>("checking");
 
   async function loadMarket() {
+    if (!supabase) {
+      throw new Error("Supabase не настроен в Environment Variables Vercel");
+    }
+
     const [categoriesResult, listingsResult] = await Promise.all([
-      supabasePublic.from("categories").select("id,name,sort_order").order("sort_order"),
-      supabasePublic
+      supabase.from("categories").select("id,name,sort_order").order("sort_order"),
+      supabase
         .from("listings")
         .select(
           "id,title,description,price,views,created_at,inventory_items(item_types(category_id,image_url,name))",
@@ -88,28 +93,42 @@ export default function Market() {
   useEffect(() => {
     let mounted = true;
 
-    loadMarket()
+    void loadMarket()
       .catch((reason: unknown) => {
         if (mounted) {
           setError(reason instanceof Error ? reason.message : "Не удалось загрузить рынок");
         }
       })
-      .finally(() => mounted && setLoading(false));
+      .finally(() => {
+        if (mounted) setLoading(false);
+      });
 
-    const channel = supabasePublic
+    if (!supabase) {
+      return () => {
+        mounted = false;
+      };
+    }
+
+    const channel = supabase
       .channel("tradeup-market")
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "listings" },
-        () => void loadMarket(),
+        () => {
+          void loadMarket().catch((reason: unknown) => {
+            if (mounted) {
+              setError(reason instanceof Error ? reason.message : "Не удалось обновить рынок");
+            }
+          });
+        },
       )
       .subscribe();
 
     return () => {
       mounted = false;
-      void supabasePublic.removeChannel(channel);
+      void supabase.removeChannel(channel);
     };
-  }, []);
+  }, [supabase]);
 
   useEffect(() => {
     let cancelled = false;
@@ -132,6 +151,7 @@ export default function Market() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ initData: webApp.initData }),
+      cache: "no-store",
     })
       .then(async (response) => {
         const payload = (await response.json()) as {
