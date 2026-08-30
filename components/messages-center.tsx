@@ -11,11 +11,13 @@ type ChatProfile = { id: string; first_name: string; username: string | null; ph
 type ItemType = { name: string; brand: string | null; image_url: string | null; category_id: string };
 type InventoryJoin = { item_types: ItemType | ItemType[] | null };
 type ChatListing = { id: string; title: string; price: number | string; status: string; seller_id: string; inventory_items: InventoryJoin | InventoryJoin[] | null };
-type ThreadsResult = { profileId?: string; threads?: Thread[]; profiles?: ChatProfile[]; listings?: ChatListing[] };
+type SystemChat = { id: "tradeup" | "support"; kind: string; title: string; subtitle: string; preview: string; updatedAt: string; unread: boolean; status: string };
+type ThreadsResult = { profileId?: string; threads?: Thread[]; profiles?: ChatProfile[]; listings?: ChatListing[]; systemChats?: SystemChat[] };
 
 export default function MessagesCenter() {
   const session = useTelegramSession();
   const [threads, setThreads] = useState<Thread[]>([]);
+  const [systemChats, setSystemChats] = useState<SystemChat[]>([]);
   const [profiles, setProfiles] = useState<ChatProfile[]>([]);
   const [listings, setListings] = useState<ChatListing[]>([]);
   const [profileId, setProfileId] = useState("");
@@ -29,6 +31,7 @@ export default function MessagesCenter() {
     try {
       const result = await session.callChatAction("threads") as ThreadsResult;
       setThreads(result.threads ?? []);
+      setSystemChats(result.systemChats ?? []);
       setProfiles(result.profiles ?? []);
       setListings(result.listings ?? []);
       setProfileId(result.profileId ?? "");
@@ -46,16 +49,15 @@ export default function MessagesCenter() {
       return;
     }
     void load();
-    const timer = window.setInterval(() => {
-      if (document.visibilityState === "visible") void load(true);
-    }, 5000);
+    const timer = window.setInterval(() => { if (document.visibilityState === "visible") void load(true); }, 5000);
     return () => window.clearInterval(timer);
   }, [session.state]);
 
   const profileMap = useMemo(() => new Map(profiles.map((profile) => [profile.id, profile])), [profiles]);
   const listingMap = useMemo(() => new Map(listings.map((listing) => [listing.id, listing])), [listings]);
+  const normalized = query.trim().toLocaleLowerCase("ru");
+  const visibleSystems = useMemo(() => !normalized ? systemChats : systemChats.filter((chat) => `${chat.title} ${chat.subtitle} ${chat.preview}`.toLocaleLowerCase("ru").includes(normalized)), [systemChats, normalized]);
   const visible = useMemo(() => {
-    const normalized = query.trim().toLocaleLowerCase("ru");
     if (!normalized) return threads;
     return threads.filter((thread) => {
       const otherId = thread.buyer_id === profileId ? thread.seller_id : thread.buyer_id;
@@ -63,44 +65,52 @@ export default function MessagesCenter() {
       const listing = listingMap.get(thread.listing_id);
       return `${other?.first_name ?? ""} ${other?.username ?? ""} ${listing?.title ?? ""} ${thread.last_message_preview}`.toLocaleLowerCase("ru").includes(normalized);
     });
-  }, [threads, query, profileId, profileMap, listingMap]);
+  }, [threads, normalized, profileId, profileMap, listingMap]);
 
   if (session.state !== "verified" && !loading) {
     return <div className="flatAuth"><Icon name="message" size={32}/><strong>Чаты доступны в Telegram</strong><button type="button" onClick={session.openBot}>Открыть TradeUP</button></div>;
   }
 
+  const nothing = !loading && !error && visibleSystems.length === 0 && visible.length === 0;
+
   return (
     <div className="messagesPage">
       <div className="flatPageTitle"><h1>Чаты</h1></div>
-      <label className="messageSearch"><Icon name="search" size={18}/><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Поиск по людям и объявлениям"/></label>
+      <label className="messageSearch"><Icon name="search" size={18}/><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Поиск"/></label>
 
       {loading && <div className="messageListSkeleton" />}
       {error && <div className="flatNotice">{error}</div>}
-      {!loading && !error && visible.length === 0 && (
-        <div className="flatEmpty messagesEmpty"><Icon name="message" size={30}/><strong>{threads.length ? "Ничего не найдено" : "Чатов пока нет"}</strong><span>{threads.length ? "Измени запрос" : "Открой объявление и напиши продавцу"}</span></div>
-      )}
+      {nothing && <div className="flatEmpty messagesEmpty"><Icon name="message" size={30}/><strong>Ничего не найдено</strong><span>Измени запрос</span></div>}
 
-      {!loading && visible.length > 0 && <div className="messageList">{visible.map((thread) => {
-        const otherId = thread.buyer_id === profileId ? thread.seller_id : thread.buyer_id;
-        const other = profileMap.get(otherId);
-        const listing = listingMap.get(thread.listing_id);
-        const readAt = thread.buyer_id === profileId ? thread.buyer_read_at : thread.seller_read_at;
-        const unread = Boolean(thread.last_message_at && thread.last_sender_id !== profileId && (!readAt || new Date(thread.last_message_at).getTime() > new Date(readAt).getTime()));
-        const initial = other?.first_name?.trim().charAt(0).toUpperCase() || "T";
-
-        return <Link href={`/messages/${thread.id}`} className={unread ? "messageRow unread" : "messageRow"} key={thread.id}>
-          <div className="messagePersonAvatar">
-            {other?.photo_url ? <img src={other.photo_url} alt=""/> : <span>{initial}</span>}
-            {other?.is_online && <i />}
-          </div>
+      {!loading && !error && (visibleSystems.length > 0 || visible.length > 0) && <div className="messageList">
+        {visibleSystems.map((chat) => <Link href={`/messages/${chat.id}`} className={chat.unread ? "messageRow systemChatRow unread" : "messageRow systemChatRow"} key={chat.id}>
+          <div className={chat.id === "tradeup" ? "messagePersonAvatar systemAvatar tradeup" : "messagePersonAvatar systemAvatar support"}><Icon name={chat.id === "tradeup" ? "bot" : "message"} size={21}/></div>
           <div className="messageMain">
-            <div className="messageNameLine"><strong>{other?.first_name ?? "Пользователь"}</strong><time>{thread.last_message_at ? relativeDate(thread.last_message_at) : ""}</time></div>
-            <div className="messagePreview">{thread.last_message_preview || "Начните переписку"}</div>
-            <div className="messageListingLine">{listing?.title ?? "Объявление"}{listing ? ` · ${rubles(listing.price)}` : ""}</div>
+            <div className="messageNameLine"><strong>{chat.title}</strong><time>{chat.updatedAt && new Date(chat.updatedAt).getTime() > 0 ? relativeDate(chat.updatedAt) : ""}</time></div>
+            <div className="messagePreview">{chat.preview}</div>
+            <div className="messageListingLine systemChatSubtitle">{chat.subtitle}</div>
           </div>
-          {unread && <i className="messageUnreadBadge">1</i>}
-        </Link>;
-      })}</div>}
+          {chat.unread && <i className="messageUnreadBadge">1</i>}
+        </Link>)}
+
+        {visible.map((thread) => {
+          const otherId = thread.buyer_id === profileId ? thread.seller_id : thread.buyer_id;
+          const other = profileMap.get(otherId);
+          const listing = listingMap.get(thread.listing_id);
+          const readAt = thread.buyer_id === profileId ? thread.buyer_read_at : thread.seller_read_at;
+          const unread = Boolean(thread.last_message_at && thread.last_sender_id !== profileId && (!readAt || new Date(thread.last_message_at).getTime() > new Date(readAt).getTime()));
+          const initial = other?.first_name?.trim().charAt(0).toUpperCase() || "T";
+          return <Link href={`/messages/${thread.id}`} className={unread ? "messageRow unread" : "messageRow"} key={thread.id}>
+            <div className="messagePersonAvatar">{other?.photo_url ? <img src={other.photo_url} alt=""/> : <span>{initial}</span>}{other?.is_online && <i />}</div>
+            <div className="messageMain">
+              <div className="messageNameLine"><strong>{other?.first_name ?? "Пользователь"}</strong><time>{thread.last_message_at ? relativeDate(thread.last_message_at) : ""}</time></div>
+              <div className="messagePreview">{thread.last_message_preview || "Начните переписку"}</div>
+              <div className="messageListingLine">{listing?.title ?? "Объявление"}{listing ? ` · ${rubles(listing.price)}` : ""}</div>
+            </div>
+            {unread && <i className="messageUnreadBadge">1</i>}
+          </Link>;
+        })}
+      </div>}
     </div>
   );
 }

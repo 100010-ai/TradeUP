@@ -4,7 +4,41 @@ import { validateTelegramRequest } from "@/lib/telegram/server-game";
 
 export const runtime = "nodejs";
 
-const allowedActions = new Set(["threads", "start_thread", "open_thread", "send_message", "mark_read"]);
+const allowedActions = new Set([
+  "threads", "start_thread", "open_thread", "send_message", "mark_read",
+  "open_system_chat", "support_choose_topic", "support_request_human", "support_send_message",
+]);
+
+function escapeHtml(value: unknown) {
+  return String(value ?? "").replace(/[&<>\"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[char] ?? char));
+}
+
+async function notifySupportCall(request: Request, result: Record<string, unknown>, botToken: string) {
+  if (result.shouldNotify !== true || typeof result.ticketId !== "string") return;
+  const adminChatId = process.env.ADMIN_TELEGRAM_ID?.trim();
+  if (!adminChatId) return;
+  const requester = typeof result.requester === "object" && result.requester !== null ? result.requester as Record<string, unknown> : {};
+  const name = escapeHtml(requester.firstName || "Пользователь");
+  const username = requester.username ? ` @${escapeHtml(requester.username)}` : "";
+  const adminUrl = new URL("/admin", request.url);
+  adminUrl.searchParams.set("ticket", result.ticketId);
+  try {
+    await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: adminChatId,
+        text: `<b>TradeUP Support</b>\n${name}${username} вызвал поддержку.`,
+        parse_mode: "HTML",
+        disable_web_page_preview: true,
+        reply_markup: { inline_keyboard: [[{ text: "Открыть обращение", url: adminUrl.toString() }]] },
+      }),
+      cache: "no-store",
+    });
+  } catch {
+    // Ticket remains queued even when Telegram notification delivery fails.
+  }
+}
 
 export async function POST(request: Request) {
   const botToken = process.env.TELEGRAM_BOT_TOKEN;
@@ -38,6 +72,11 @@ export async function POST(request: Request) {
     let result: Record<string, unknown>;
     try { result = raw ? JSON.parse(raw) as Record<string, unknown> : { ok: false, error: "empty_chat_response" }; }
     catch { result = { ok: false, error: "invalid_chat_response" }; }
+
+    if (response.ok && result.ok && parsed.action === "support_request_human") {
+      await notifySupportCall(request, result, botToken);
+    }
+
     return NextResponse.json(result, { status: response.status, headers: { "Cache-Control": "no-store" } });
   } catch {
     return NextResponse.json({ ok: false, error: "chat_service_unavailable" }, { status: 502 });

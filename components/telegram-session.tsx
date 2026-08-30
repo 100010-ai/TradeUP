@@ -7,6 +7,7 @@ type SessionState = "checking" | "verified" | "browser" | "unavailable" | "error
 type BootstrapPayload = { ok?: boolean; user?: TelegramUser; profile?: PlayerProfile; starterGranted?: number; counts?: SessionCounts; favoriteIds?: string[]; error?: string };
 type ActionResult = Record<string, unknown> & { ok?: boolean; error?: string; profile?: PlayerProfile };
 type ChatThreadShape = { buyer_id?: unknown; seller_id?: unknown; last_sender_id?: unknown; last_message_at?: unknown; buyer_read_at?: unknown; seller_read_at?: unknown };
+type SystemChatShape = { unread?: unknown };
 
 type TelegramSessionContextValue = {
   state: SessionState;
@@ -29,26 +30,40 @@ const defaultCounts: SessionCounts = { inventory: 0, listings: 0, favorites: 0 }
 const TelegramSessionContext = createContext<TelegramSessionContextValue | null>(null);
 
 function getInitData() { return typeof window !== "undefined" ? window.Telegram?.WebApp?.initData ?? "" : ""; }
+
 function countUnread(result: ActionResult) {
   const profileId = typeof result.profileId === "string" ? result.profileId : "";
   const threads = Array.isArray(result.threads) ? result.threads as ChatThreadShape[] : [];
-  if (!profileId) return 0;
-  return threads.filter((thread) => {
+  const systems = Array.isArray(result.systemChats) ? result.systemChats as SystemChatShape[] : [];
+  const playerUnread = profileId ? threads.filter((thread) => {
     if (thread.last_sender_id === profileId || typeof thread.last_message_at !== "string") return false;
     const readAt = thread.buyer_id === profileId ? thread.buyer_read_at : thread.seller_read_at;
     return typeof readAt !== "string" || new Date(thread.last_message_at).getTime() > new Date(readAt).getTime();
-  }).length;
+  }).length : 0;
+  return playerUnread + systems.filter((chat) => chat.unread === true).length;
+}
+
+function syncTelegramInsets(webApp: NonNullable<Window["Telegram"]>["WebApp"]) {
+  const safe = webApp.safeAreaInset;
+  const content = webApp.contentSafeAreaInset;
+  const root = document.documentElement;
+  const read = (side: "top" | "right" | "bottom" | "left") => Math.max(0, Number(safe?.[side] ?? 0), Number(content?.[side] ?? 0));
+  root.style.setProperty("--tradeup-safe-top", `${read("top")}px`);
+  root.style.setProperty("--tradeup-safe-right", `${read("right")}px`);
+  root.style.setProperty("--tradeup-safe-bottom", `${read("bottom")}px`);
+  root.style.setProperty("--tradeup-safe-left", `${read("left")}px`);
 }
 
 function configureTelegramChrome(webApp: NonNullable<Window["Telegram"]>["WebApp"]) {
   try { webApp.setBackgroundColor?.("#000000"); } catch { /* old client */ }
   try { webApp.setHeaderColor?.("#000000"); } catch { /* old client */ }
   try { webApp.setBottomBarColor?.("#000000"); } catch { /* old client */ }
-
-  // Bot API 8.0+ makes the Telegram header transparent in fullscreen mode.
+  syncTelegramInsets(webApp);
   try {
     if (webApp.isVersionAtLeast?.("8.0") && !webApp.isFullscreen) webApp.requestFullscreen?.();
   } catch { /* fullscreen may be unavailable on a specific Telegram client */ }
+  window.setTimeout(() => syncTelegramInsets(webApp), 80);
+  window.setTimeout(() => syncTelegramInsets(webApp), 350);
 }
 
 export function TelegramSessionProvider({ children }: { children: React.ReactNode }) {
@@ -103,11 +118,22 @@ export function TelegramSessionProvider({ children }: { children: React.ReactNod
   const callChatAction = useCallback(async (action: string, payload: Record<string, unknown> = {}) => {
     const result = await request("/api/chat", action, payload);
     if (action === "threads") setUnreadChats(countUnread(result));
-    if (["mark_read", "send_message"].includes(action)) void refreshUnreadChats();
+    if (["mark_read", "send_message", "open_system_chat", "support_choose_topic", "support_request_human", "support_send_message"].includes(action)) void refreshUnreadChats();
     return result;
   }, [refreshUnreadChats, request]);
 
   useEffect(() => { void refresh(); }, [refresh]);
+
+  useEffect(() => {
+    const webApp = window.Telegram?.WebApp;
+    if (!webApp) return;
+    const sync = () => syncTelegramInsets(webApp);
+    const events = ["safeAreaChanged", "contentSafeAreaChanged", "fullscreenChanged", "viewportChanged"];
+    events.forEach((event) => webApp.onEvent?.(event, sync));
+    configureTelegramChrome(webApp);
+    return () => events.forEach((event) => webApp.offEvent?.(event, sync));
+  }, []);
+
   useEffect(() => {
     if (state !== "verified") return;
     void refreshUnreadChats();

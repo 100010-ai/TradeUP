@@ -1,10 +1,60 @@
-/* Last-resort navbar geometry lock. Keep this import last. */
+/* Viewport lock + Telegram fullscreen safe-area. Keep this import last. */
+:root {
+  --tradeup-safe-top: 0px;
+  --tradeup-safe-right: 0px;
+  --tradeup-safe-bottom: 0px;
+  --tradeup-safe-left: 0px;
+}
+
 html, body, .appRoot {
   width: 100% !important;
   max-width: 100% !important;
+  min-width: 0 !important;
   margin: 0 !important;
   padding-inline: 0 !important;
   overflow-x: clip !important;
+}
+
+.appHeader {
+  top: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-height: calc(56px + var(--tradeup-safe-top)) !important;
+  padding-top: var(--tradeup-safe-top) !important;
+  padding-left: calc(14px + var(--tradeup-safe-left)) !important;
+  padding-right: calc(14px + var(--tradeup-safe-right)) !important;
+  box-sizing: border-box !important;
+}
+
+.pageCanvas {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  padding-left: calc(14px + var(--tradeup-safe-left)) !important;
+  padding-right: calc(14px + var(--tradeup-safe-right)) !important;
+  padding-bottom: calc(74px + var(--tradeup-safe-bottom)) !important;
+  box-sizing: border-box !important;
+}
+
+.flowCanvas {
+  padding-left: var(--tradeup-safe-left) !important;
+  padding-right: var(--tradeup-safe-right) !important;
+  padding-bottom: 0 !important;
+}
+
+.flatFlowHeader,
+.chatFlowHeader {
+  min-height: calc(52px + var(--tradeup-safe-top)) !important;
+  padding-top: var(--tradeup-safe-top) !important;
+  padding-left: calc(12px + var(--tradeup-safe-left)) !important;
+  padding-right: calc(12px + var(--tradeup-safe-right)) !important;
+  box-sizing: border-box !important;
+  background: #000 !important;
+}
+
+.chatComposer,
+.flatFlowBottom {
+  padding-bottom: calc(8px + var(--tradeup-safe-bottom)) !important;
 }
 
 .bottomBar {
@@ -13,19 +63,20 @@ html, body, .appRoot {
   left: 0 !important;
   right: 0 !important;
   bottom: 0 !important;
-  width: 100vw !important;
-  max-width: 100vw !important;
+  width: 100% !important;
+  max-width: 100% !important;
   min-width: 0 !important;
-  height: calc(64px + env(safe-area-inset-bottom, 0px)) !important;
+  height: calc(62px + var(--tradeup-safe-bottom)) !important;
   margin: 0 !important;
-  padding: 4px 0 env(safe-area-inset-bottom, 0px) !important;
+  padding: 3px 0 var(--tradeup-safe-bottom) !important;
   transform: none !important;
   translate: none !important;
   scale: 1 !important;
   box-sizing: border-box !important;
   display: grid !important;
-  grid-template-columns: repeat(5, 20%) !important;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
   grid-template-rows: 1fr !important;
+  gap: 0 !important;
   align-items: stretch !important;
   justify-items: stretch !important;
   overflow: hidden !important;
@@ -37,11 +88,12 @@ html, body, .appRoot {
 .bottomItem {
   position: relative !important;
   width: 100% !important;
-  max-width: none !important;
+  max-width: 100% !important;
   min-width: 0 !important;
   height: 100% !important;
+  min-height: 0 !important;
   margin: 0 !important;
-  padding: 5px 2px 4px !important;
+  padding: 5px 1px 4px !important;
   transform: none !important;
   translate: none !important;
   box-sizing: border-box !important;
@@ -57,30 +109,28 @@ html, body, .appRoot {
   text-align: center !important;
 }
 
-.bottomItem.active {
-  color: var(--accent) !important;
-  border: 0 !important;
-}
-
+.bottomItem.active { color: var(--accent) !important; border: 0 !important; }
 .bottomItem.active::before {
   content: "";
   position: absolute;
   top: 0;
-  left: 28%;
-  right: 28%;
+  left: 31%;
+  right: 31%;
   height: 2px;
+  border-radius: 0 0 2px 2px;
   background: var(--accent);
 }
 
 .bottomIcon {
-  width: 24px !important;
-  height: 24px !important;
-  min-width: 24px !important;
+  width: 23px !important;
+  height: 23px !important;
+  min-width: 23px !important;
   margin: 0 !important;
   display: grid !important;
   place-items: center !important;
   transform: none !important;
 }
+.bottomIcon svg { width: 21px !important; height: 21px !important; }
 
 .bottomItem > span:last-of-type {
   width: 100% !important;
@@ -89,16 +139,21 @@ html, body, .appRoot {
   text-overflow: ellipsis !important;
   white-space: nowrap !important;
   font-size: 9px !important;
-  line-height: 11px !important;
+  line-height: 10px !important;
+  letter-spacing: -.01em !important;
 }
 
 .navUnread {
-  top: 3px !important;
+  top: 2px !important;
   left: calc(50% + 7px) !important;
   right: auto !important;
   transform: none !important;
 }
 
-.pageCanvas {
-  padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px)) !important;
+@media (max-width: 390px) {
+  .pageCanvas {
+    padding-left: calc(11px + var(--tradeup-safe-left)) !important;
+    padding-right: calc(11px + var(--tradeup-safe-right)) !important;
+  }
+  .bottomItem > span:last-of-type { font-size: 8px !important; }
 }

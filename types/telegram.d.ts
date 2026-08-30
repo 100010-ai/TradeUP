@@ -13,6 +13,7 @@ type TelegramWebAppUser = {
 };
 
 type TelegramInset = { top: number; bottom: number; left: number; right: number };
+type TelegramEventCallback = (...args: unknown[]) => void;
 
 type TelegramWebApp = {
   initData: string;
@@ -36,6 +37,8 @@ type TelegramWebApp = {
   setHeaderColor?(color: string): void;
   setBackgroundColor?(color: string): void;
   setBottomBarColor?(color: string): void;
+  onEvent?(eventType: string, callback: TelegramEventCallback): void;
+  offEvent?(eventType: string, callback: TelegramEventCallback): void;
 };
 
 declare global {

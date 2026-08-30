@@ -1,0 +1,165 @@
+/* System chats + browser admin. Scoped to avoid changing marketplace geometry. */
+.systemChatRow .messagePreview { font-weight: 650; }
+.systemAvatar { color: #0a0a0a !important; border: 0 !important; }
+.systemAvatar.tradeup { background: var(--accent) !important; }
+.systemAvatar.support { background: #f0f0ed !important; }
+.systemChatSubtitle { color: #7a7a7a !important; }
+
+.systemChatScreen { min-height: 100dvh; background: #000; color: #f5f5f2; display: flex; flex-direction: column; }
+.systemChatHeader { display: grid !important; grid-template-columns: 38px minmax(0,1fr) !important; gap: 7px !important; align-items: center !important; border-bottom: 1px solid #181818 !important; }
+.systemChatHeader > a { width: 36px; height: 36px; display: grid; place-items: center; }
+.systemChatIdentity { min-width: 0; display: flex; align-items: center; gap: 9px; }
+.systemChatIdentity > span:last-child { min-width: 0; display: flex; flex-direction: column; }
+.systemChatIdentity strong { font-size: 13px; line-height: 1.1; }
+.systemChatIdentity small { margin-top: 3px; color: #777; font-size: 9px; }
+.systemChatLogo { flex: 0 0 auto; width: 32px; height: 32px; display: grid; place-items: center; border-radius: 9px; color: #080808; }
+.systemChatLogo.tradeup { background: var(--accent); }
+.systemChatLogo.support { background: #f1f1ee; }
+
+.systemBroadcastFeed, .supportMessages { flex: 1; min-height: 0; padding: 14px 12px calc(22px + var(--tradeup-safe-bottom)); overflow-y: auto; }
+.broadcastMessage { padding: 15px 0 17px; border-bottom: 1px solid #171717; }
+.broadcastMeta { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.broadcastMeta strong { color: var(--accent); font-size: 12px; }
+.broadcastMeta time { color: #5f5f5f; font-size: 9px; }
+.broadcastMessage p { margin: 8px 0 0; color: #eeeeea; font-size: 13px; line-height: 1.5; white-space: pre-wrap; }
+.broadcastOfficial { margin-top: 10px; display: inline-flex; align-items: center; gap: 4px; color: #6d6d6d; font-size: 9px; }
+
+.supportIntro { padding: 22px 4px 16px; text-align: center; }
+.supportIntroIcon { width: 48px; height: 48px; margin: 0 auto 12px; display: grid; place-items: center; border-radius: 15px; background: #111; color: var(--accent); }
+.supportIntro strong { display: block; font-size: 18px; }
+.supportIntro p { max-width: 300px; margin: 7px auto 0; color: #777; font-size: 11px; line-height: 1.45; }
+.supportTopicPicker { margin-top: 14px; border-top: 1px solid #181818; }
+.supportTopicPicker > strong { display: block; padding: 15px 0 8px; color: #8b8b8b; font-size: 10px; text-transform: uppercase; letter-spacing: .07em; }
+.supportTopicPicker button { width: 100%; min-height: 48px; padding: 0; display: flex; align-items: center; justify-content: space-between; gap: 12px; border: 0; border-bottom: 1px solid #181818; background: transparent; color: #f2f2ef; text-align: left; }
+.supportTopicPicker button span { font-size: 12px; font-weight: 720; }
+.callSupportButton { width: 100%; min-height: 48px; margin-top: 14px; display: flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid #292929; border-radius: 10px; background: #111; color: #f5f5f2; font-size: 12px; font-weight: 800; }
+.supportWaiting { margin: 14px 0 4px; padding: 10px 0; display: flex; align-items: flex-start; gap: 8px; color: #979797; font-size: 10px; line-height: 1.4; border-top: 1px solid #181818; }
+.supportWaiting i { width: 7px; height: 7px; margin-top: 3px; border-radius: 50%; background: var(--accent); }
+.supportSystemStatus { width: fit-content; max-width: 90%; margin: 10px auto; padding: 5px 9px; border-radius: 8px; background: #111; color: #818181; font-size: 9px; text-align: center; }
+.supportAgentBubble { background: #121212 !important; }
+
+/* Admin */
+.adminLogin, .adminShell { min-height: 100dvh; background: #080808; color: #f4f4f1; font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+.adminLogin { display: grid; place-items: center; padding: 24px; }
+.adminLoginBox { width: min(100%, 380px); display: flex; flex-direction: column; gap: 10px; }
+.adminMark { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 12px; background: #f2c85b; color: #111; font-weight: 950; letter-spacing: -.06em; }
+.adminLoginBox h1 { margin: 8px 0 0; font-size: 28px; }
+.adminLoginBox p, .adminLoginBox > span { margin: 0 0 8px; color: #777; font-size: 12px; }
+.adminLoginBox input { height: 48px; padding: 0 13px; border: 1px solid #222; border-radius: 9px; outline: none; background: #0e0e0e; color: #fff; }
+.adminLoginBox button { height: 48px; border: 0; border-radius: 9px; background: #f2c85b; color: #12100a; font-weight: 850; }
+.adminError, .adminAlert { color: #ff8177 !important; }
+
+.adminShell { display: grid; grid-template-columns: 220px minmax(0,1fr); }
+.adminSidebar { position: sticky; top: 0; height: 100dvh; padding: 18px 12px; display: flex; flex-direction: column; border-right: 1px solid #181818; background: #050505; }
+.adminBrand { display: flex; align-items: center; gap: 10px; padding: 4px 7px 19px; }
+.adminBrand > span { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 9px; background: #f2c85b; color: #12100a; font-weight: 950; }
+.adminBrand div { display: flex; flex-direction: column; }
+.adminBrand strong { font-size: 14px; }
+.adminBrand small { color: #626262; font-size: 9px; }
+.adminSidebar nav { display: flex; flex-direction: column; gap: 3px; }
+.adminSidebar nav button, .adminLogout { min-height: 42px; padding: 0 10px; display: flex; align-items: center; gap: 10px; border: 0; border-radius: 8px; background: transparent; color: #858585; text-align: left; font-size: 11px; font-weight: 720; }
+.adminSidebar nav button.active { background: #111; color: #f3f3f0; }
+.adminSidebar nav button i { margin-left: auto; min-width: 20px; height: 20px; padding: 0 5px; display: grid; place-items: center; border-radius: 10px; background: #f2c85b; color: #111; font-size: 9px; font-style: normal; }
+.adminLogout { margin-top: auto; color: #686868; }
+.adminMain { min-width: 0; padding: 22px 28px 50px; }
+.adminTop { min-height: 54px; display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; border-bottom: 1px solid #181818; }
+.adminTop h1 { margin: 0; font-size: 22px; letter-spacing: -.035em; }
+.adminTop span { display: block; margin-top: 3px; color: #696969; font-size: 9px; }
+.adminTop > button { height: 34px; padding: 0 10px; display: flex; align-items: center; gap: 6px; border: 1px solid #202020; border-radius: 7px; background: #0d0d0d; color: #aaa; font-size: 10px; }
+.adminAlert { margin: 12px 0; padding: 9px 0; border-bottom: 1px solid #2a1515; font-size: 10px; }
+.adminStats { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); border-bottom: 1px solid #181818; }
+.adminStats > div { min-width: 0; padding: 20px 16px 18px 0; }
+.adminStats span { display: block; color: #6f6f6f; font-size: 9px; }
+.adminStats strong { display: block; margin-top: 5px; overflow: hidden; text-overflow: ellipsis; font-size: 22px; letter-spacing: -.04em; }
+.adminSection { margin-top: 25px; }
+.adminSectionTitle { min-height: 36px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 1px solid #181818; }
+.adminSectionTitle h2 { margin: 0; font-size: 13px; }
+.adminSectionTitle span, .adminSectionTitle button { color: #666; font-size: 9px; }
+.adminSectionTitle button { border: 0; background: none; }
+.adminTableRow { width: 100%; min-height: 46px; display: grid; grid-template-columns: 150px minmax(0,1fr) 85px 110px; align-items: center; gap: 12px; border: 0; border-bottom: 1px solid #151515; background: transparent; color: #ddd; text-align: left; }
+.adminTableRow strong { font-size: 11px; }
+.adminTableRow > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #7b7b7b; font-size: 10px; }
+.adminTableRow time { color: #5f5f5f; font-size: 9px; text-align: right; }
+.adminTableRow em, .adminTicket em, .adminTicketChat header em { width: fit-content; padding: 4px 6px; border-radius: 5px; font-size: 8px; font-style: normal; }
+.status-waiting { background: #2b2412; color: #f2c85b; }
+.status-active { background: #13251b; color: #6dd79a; }
+.status-closed { background: #151515; color: #686868; }
+.status-bot { background: #141925; color: #819ad9; }
+.adminEmpty { padding: 22px 0; color: #606060; font-size: 11px; }
+.adminEmpty.large { min-height: 360px; display: grid; place-items: center; }
+
+.adminSupportLayout { margin-top: 18px; display: grid; grid-template-columns: 280px minmax(0,1fr); gap: 22px; }
+.adminTicketList { min-width: 0; border-right: 1px solid #181818; padding-right: 14px; }
+.adminTicket { width: 100%; padding: 12px 4px; border: 0; border-bottom: 1px solid #151515; background: transparent; color: #ddd; text-align: left; }
+.adminTicket.active { background: #0d0d0d; }
+.adminTicket > div { display: flex; align-items: center; justify-content: space-between; gap: 7px; }
+.adminTicket strong { font-size: 11px; }
+.adminTicket p { margin: 6px 0 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #777; font-size: 9px; }
+.adminTicket small { display: block; margin-top: 5px; color: #505050; font-size: 8px; }
+.adminTicketChat { min-width: 0; }
+.adminTicketChat > header { min-height: 50px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #181818; }
+.adminTicketChat > header div { display: flex; flex-direction: column; }
+.adminTicketChat > header strong { font-size: 12px; }
+.adminTicketChat > header span { margin-top: 2px; color: #666; font-size: 9px; }
+.adminChatMessages { height: 390px; padding: 12px 0; overflow-y: auto; }
+.adminMessage { width: min(78%, 560px); margin: 5px 0; padding: 9px 11px; border-radius: 8px; background: #111; }
+.adminMessage.user { margin-left: auto; background: #2b2412; }
+.adminMessage.system { width: fit-content; max-width: 90%; margin: 8px auto; background: transparent; color: #666; text-align: center; }
+.adminMessage span { color: #777; font-size: 8px; }
+.adminMessage p { margin: 4px 0 0; white-space: pre-wrap; font-size: 11px; line-height: 1.4; }
+.adminMessage time { display: block; margin-top: 4px; color: #555; font-size: 7px; }
+.adminChatActions { border-top: 1px solid #181818; padding-top: 10px; }
+.adminChatActions > button { min-height: 36px; padding: 0 12px; border: 1px solid #252525; border-radius: 7px; background: #111; color: #ddd; font-size: 10px; }
+.adminChatActions > button.danger { margin-top: 9px; color: #d97670; background: transparent; }
+.adminChatActions form { margin-top: 10px; display: grid; grid-template-columns: 1fr 42px; gap: 7px; }
+.adminChatActions textarea { min-height: 68px; resize: vertical; padding: 10px; border: 1px solid #222; border-radius: 8px; outline: none; background: #0c0c0c; color: #eee; }
+.adminChatActions form button { border: 0; border-radius: 8px; background: #f2c85b; color: #111; }
+.adminTopics { grid-column: 1 / -1; margin-top: 8px; }
+.adminTopic { padding: 12px 0; border-bottom: 1px solid #171717; }
+.adminTopicHead { display: flex; align-items: center; gap: 10px; }
+.adminTopicHead > input { flex: 1; }
+.adminTopic input, .adminTopic textarea { padding: 8px; border: 1px solid #202020; border-radius: 6px; outline: none; background: #0c0c0c; color: #ddd; }
+.adminTopic textarea { width: 100%; margin-top: 7px; resize: vertical; }
+.adminTopic label { display: flex; align-items: center; gap: 5px; color: #777; font-size: 9px; }
+.adminTopic > button { margin-top: 7px; height: 30px; padding: 0 10px; border: 0; border-radius: 6px; background: #171717; color: #bbb; font-size: 9px; }
+
+.adminBroadcast { max-width: 820px; margin-top: 20px; }
+.adminBroadcast > form { border-bottom: 1px solid #181818; padding-bottom: 20px; }
+.adminBroadcast label { display: block; margin-bottom: 8px; color: #888; font-size: 10px; }
+.adminBroadcast textarea { width: 100%; padding: 12px; border: 1px solid #222; border-radius: 8px; outline: none; background: #0c0c0c; color: #eee; resize: vertical; }
+.adminBroadcast form > div { margin-top: 7px; display: flex; align-items: center; justify-content: space-between; }
+.adminBroadcast form span { color: #5d5d5d; font-size: 8px; }
+.adminBroadcast form button { height: 34px; padding: 0 12px; border: 0; border-radius: 7px; background: #f2c85b; color: #111; font-size: 10px; font-weight: 800; }
+.adminBroadcast section h2 { margin: 22px 0 8px; font-size: 13px; }
+.adminBroadcast article { padding: 13px 0; border-bottom: 1px solid #171717; }
+.adminBroadcast article.disabled { opacity: .45; }
+.adminBroadcast article > div { display: flex; justify-content: space-between; }
+.adminBroadcast article strong { color: #f2c85b; font-size: 10px; }
+.adminBroadcast article time { color: #555; font-size: 8px; }
+.adminBroadcast article p { margin: 7px 0; color: #ccc; font-size: 11px; line-height: 1.45; white-space: pre-wrap; }
+.adminBroadcast article button { padding: 0; border: 0; background: none; color: #6f6f6f; font-size: 8px; }
+
+.adminUsers > div { min-height: 48px; display: grid; grid-template-columns: minmax(180px,1.3fr) repeat(4,minmax(80px,.7fr)) 110px; align-items: center; gap: 10px; border-bottom: 1px solid #151515; font-size: 9px; color: #898989; }
+.adminUserName { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.adminUserName > span { width: 30px; height: 30px; display: grid; place-items: center; overflow: hidden; border-radius: 9px; background: #161616; color: #ddd; }
+.adminUserName img { width: 100%; height: 100%; object-fit: cover; }
+.adminUserName div { min-width: 0; display: flex; flex-direction: column; }
+.adminUserName strong { color: #ddd; font-size: 10px; }
+.adminUserName small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #5f5f5f; font-size: 8px; }
+.adminUsers time { text-align: right; color: #555; font-size: 8px; }
+
+@media (max-width: 880px) {
+  .adminShell { grid-template-columns: 58px minmax(0,1fr); }
+  .adminSidebar { padding-inline: 7px; }
+  .adminBrand div, .adminSidebar nav button span, .adminLogout { display: none; }
+  .adminBrand { padding-inline: 5px; }
+  .adminSidebar nav button { justify-content: center; padding: 0; }
+  .adminSidebar nav button i { position: absolute; margin: -24px -28px 0 0; }
+  .adminMain { padding: 18px 14px 40px; }
+  .adminStats { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .adminSupportLayout { grid-template-columns: 1fr; }
+  .adminTicketList { max-height: 260px; overflow-y: auto; border-right: 0; border-bottom: 1px solid #181818; padding: 0 0 10px; }
+  .adminTopics { grid-column: 1; }
+  .adminUsers { overflow-x: auto; }
+  .adminUsers > div { min-width: 760px; }
+}
