@@ -2,6 +2,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.112.4";
 
 const encoder = new TextEncoder();
+const PROFILE_FIELDS = "id,username,first_name,photo_url,balance,rating,deals_count,total_profit,is_online,last_seen_at,starter_pack_granted_at";
 function hexToBytes(hex:string){const bytes=new Uint8Array(hex.length/2);for(let i=0;i<bytes.length;i++)bytes[i]=Number.parseInt(hex.slice(i*2,i*2+2),16);return bytes;}
 type TelegramUser={id:number;first_name:string;last_name?:string;username?:string;photo_url?:string};
 type RequestBody={initData?:unknown;action?:unknown;payload?:unknown};
@@ -15,11 +16,40 @@ async function verifyInitData(initData:string,secretHex:string){
   try{const key=await crypto.subtle.importKey("raw",hexToBytes(secretHex),{name:"HMAC",hash:"SHA-256"},false,["verify"]);if(!await crypto.subtle.verify("HMAC",key,hexToBytes(hash),encoder.encode(check)))return{ok:false as const,reason:"invalid_hash"};const user=JSON.parse(userRaw) as TelegramUser;if(typeof user.id!=="number"||!Number.isSafeInteger(user.id)||typeof user.first_name!=="string"||!user.first_name.trim())return{ok:false as const,reason:"invalid_user"};return{ok:true as const,user};}catch{return{ok:false as const,reason:"verification_error"};}
 }
 function safeActionError(message:string|undefined){const c=["invalid_price","invalid_title","description_too_long","item_not_owned","item_locked","listing_not_owned","listing_not_active","cannot_buy_own_listing","cannot_offer_own_listing","invalid_offer_amount","invalid_sale_price","buyer_not_found","insufficient_funds","inventory_mismatch","offer_not_pending","offer_not_owned"];return c.find(v=>message?.includes(v))??"game_action_failed";}
+
 async function loadProfile(db:Db,user:TelegramUser){
-  const now=new Date().toISOString();const {data:profile,error}=await db.from("profiles").upsert({telegram_id:user.id,username:user.username??null,first_name:user.first_name.trim().slice(0,128),last_name:user.last_name?.trim().slice(0,128)??null,photo_url:user.photo_url??null,is_online:true,last_seen_at:now,updated_at:now},{onConflict:"telegram_id"}).select("id,username,first_name,photo_url,balance,rating,deals_count,total_profit,is_online,last_seen_at,starter_pack_granted_at").single();if(error||!profile)throw new Error("profile_upsert_failed");
-  const {data:starterGranted,error:starterError}=await db.rpc("grant_starter_items",{p_profile_id:profile.id});if(starterError)throw new Error("starter_pack_failed");
-  if(Number(starterGranted)>0){const {data:refreshed,error:e}=await db.from("profiles").select("id,username,first_name,photo_url,balance,rating,deals_count,total_profit,is_online,last_seen_at,starter_pack_granted_at").eq("id",profile.id).single();if(!e&&refreshed)return{profile:refreshed,starterGranted:Number(starterGranted)};}
-  return{profile,starterGranted:Number(starterGranted)};
+  const firstName=user.first_name.trim().slice(0,128),username=user.username??null,photoUrl=user.photo_url??null;
+  const existing=await db.from("profiles").select(PROFILE_FIELDS).eq("telegram_id",user.id).maybeSingle();
+  if(existing.error)throw new Error("profile_load_failed");
+  let profile=existing.data;
+  const nowMs=Date.now();
+  if(profile){
+    const fresh=nowMs-new Date(profile.last_seen_at).getTime()<60_000;
+    const identitySame=profile.first_name===firstName&&profile.username===username&&profile.photo_url===photoUrl;
+    if(!fresh||!identitySame){
+      const now=new Date(nowMs).toISOString();
+      const updated=await db.from("profiles").update({username,first_name:firstName,last_name:user.last_name?.trim().slice(0,128)??null,photo_url:photoUrl,is_online:true,last_seen_at:now,updated_at:now}).eq("id",profile.id).select(PROFILE_FIELDS).single();
+      if(updated.error||!updated.data)throw new Error("profile_update_failed");
+      profile=updated.data;
+    }
+  }else{
+    const now=new Date(nowMs).toISOString();
+    const created=await db.from("profiles").insert({telegram_id:user.id,username,first_name:firstName,last_name:user.last_name?.trim().slice(0,128)??null,photo_url:photoUrl,is_online:true,last_seen_at:now,updated_at:now}).select(PROFILE_FIELDS).single();
+    if(created.error||!created.data)throw new Error("profile_create_failed");
+    profile=created.data;
+  }
+
+  let starterGranted=0;
+  if(!profile.starter_pack_granted_at){
+    const starter=await db.rpc("grant_starter_items",{p_profile_id:profile.id});
+    if(starter.error)throw new Error("starter_pack_failed");
+    starterGranted=Number(starter.data??0);
+    if(starterGranted>0){
+      const refreshed=await db.from("profiles").select(PROFILE_FIELDS).eq("id",profile.id).single();
+      if(!refreshed.error&&refreshed.data)profile=refreshed.data;
+    }
+  }
+  return{profile,starterGranted};
 }
 async function profileSnapshot(db:Db,id:string){const {data,error}=await db.from("profiles").select("id,username,first_name,photo_url,balance,rating,deals_count,total_profit,is_online,last_seen_at").eq("id",id).single();if(error)throw new Error("profile_load_failed");return data;}
 async function loadOffers(db:Db,profileId:string){
@@ -55,7 +85,7 @@ Deno.serve(async(req:Request)=>{
       const {data,error}=await db.from("inventory_items").select("id,condition,acquired_price,acquired_at,is_locked,item_types(id,name,brand,category_id,base_value,volatility,image_url)").eq("owner_id",profileId).order("acquired_at",{ascending:false});if(error)throw new Error("inventory_load_failed");const ids=(data??[]).map(i=>i.id);let live:any[]=[];if(ids.length){const r=await db.from("listings").select("id,inventory_item_id,title,description,price,status,created_at").in("inventory_item_id",ids).in("status",["active","reserved"]);if(r.error)throw new Error("inventory_listings_failed");live=r.data??[];}return Response.json({ok:true,inventory:data??[],liveListings:live});
     }
     if(body.action==="favorites"){
-      const {data,error}=await db.from("favorites").select("listing_id,created_at").eq("profile_id",profileId).order("created_at",{ascending:false});if(error)throw new Error("favorites_load_failed");const ids=(data??[]).map(f=>f.listing_id);if(!ids.length)return Response.json({ok:true,listings:[]});const r=await db.from("market_listings").select("*").in("id",ids);if(r.error)throw new Error("favorites_listings_failed");const order=new Map(ids.map((id,index)=>[id,index]));const sorted=[...(r.data??[])].sort((a:any,b:any)=>(order.get(a.id)??Number.MAX_SAFE_INTEGER)-(order.get(b.id)??Number.MAX_SAFE_INTEGER));return Response.json({ok:true,listings:sorted});
+      const {data,error}=await db.from("favorites").select("listing_id,created_at").eq("profile_id",profileId).order("created_at",{ascending:false});if(error)throw new Error("favorites_load_failed");const ids=(data??[]).map(f=>f.listing_id);if(!ids.length)return Response.json({ok:true,listings:[]});const r=await db.from("market_listings").select("id,title,price,created_at,condition,item_name,brand,category_id,base_value,image_url").in("id",ids);if(r.error)throw new Error("favorites_listings_failed");const order=new Map(ids.map((id,index)=>[id,index]));const sorted=[...(r.data??[])].sort((a:any,b:any)=>(order.get(a.id)??Number.MAX_SAFE_INTEGER)-(order.get(b.id)??Number.MAX_SAFE_INTEGER));return Response.json({ok:true,listings:sorted});
     }
     if(body.action==="deals"){
       const {data,error}=await db.from("trades").select("id,listing_id,item_id,seller_id,buyer_id,amount,fee,seller_profit,completed_at").or(`seller_id.eq.${profileId},buyer_id.eq.${profileId}`).order("completed_at",{ascending:false}).limit(50);if(error)throw new Error("deals_load_failed");const itemIds=[...new Set((data??[]).map(t=>t.item_id))],listingIds=[...new Set((data??[]).map(t=>t.listing_id))];const [items,listings]=await Promise.all([itemIds.length?db.from("inventory_items").select("id,item_types(name,brand,category_id)").in("id",itemIds):Promise.resolve({data:[],error:null}),listingIds.length?db.from("listings").select("id,title").in("id",listingIds):Promise.resolve({data:[],error:null})]);if(items.error||listings.error)throw new Error("deals_enrichment_failed");return Response.json({ok:true,trades:data??[],items:items.data??[],listings:listings.data??[]});
