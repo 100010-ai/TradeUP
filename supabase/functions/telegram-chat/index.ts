@@ -2,6 +2,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.112.4";
 
 const encoder = new TextEncoder();
+const PROFILE_FIELDS = "id,telegram_id,first_name,username,photo_url,last_seen_at";
 type TelegramUser = { id: number; first_name: string; last_name?: string; username?: string; photo_url?: string };
 type RequestBody = { initData?: unknown; action?: unknown; payload?: unknown };
 type Db = ReturnType<typeof createClient>;
@@ -26,9 +27,23 @@ async function verifyInitData(initData:string, secretHex:string){
 }
 
 async function loadProfile(db:Db,user:TelegramUser){
-  const now=new Date().toISOString();
-  const {data,error}=await db.from("profiles").upsert({telegram_id:user.id,username:user.username??null,first_name:user.first_name.trim().slice(0,128),last_name:user.last_name?.trim().slice(0,128)??null,photo_url:user.photo_url??null,is_online:true,last_seen_at:now,updated_at:now},{onConflict:"telegram_id"}).select("id,telegram_id,first_name,username,photo_url").single();
-  if(error||!data) throw new Error("profile_upsert_failed"); return data;
+  const firstName=user.first_name.trim().slice(0,128),username=user.username??null,photoUrl=user.photo_url??null;
+  const existing=await db.from("profiles").select(PROFILE_FIELDS).eq("telegram_id",user.id).maybeSingle();
+  if(existing.error) throw new Error("profile_load_failed");
+  const nowMs=Date.now();
+  if(existing.data){
+    const fresh=nowMs-new Date(existing.data.last_seen_at).getTime()<60_000;
+    const identitySame=existing.data.first_name===firstName&&existing.data.username===username&&existing.data.photo_url===photoUrl;
+    if(fresh&&identitySame) return existing.data;
+    const now=new Date(nowMs).toISOString();
+    const updated=await db.from("profiles").update({username,first_name:firstName,last_name:user.last_name?.trim().slice(0,128)??null,photo_url:photoUrl,is_online:true,last_seen_at:now,updated_at:now}).eq("id",existing.data.id).select(PROFILE_FIELDS).single();
+    if(updated.error||!updated.data) throw new Error("profile_update_failed");
+    return updated.data;
+  }
+  const now=new Date(nowMs).toISOString();
+  const created=await db.from("profiles").insert({telegram_id:user.id,username,first_name:firstName,last_name:user.last_name?.trim().slice(0,128)??null,photo_url:photoUrl,is_online:true,last_seen_at:now,updated_at:now}).select(PROFILE_FIELDS).single();
+  if(created.error||!created.data) throw new Error("profile_create_failed");
+  return created.data;
 }
 function isParticipant(t:{buyer_id:string;seller_id:string},id:string){ return t.buyer_id===id||t.seller_id===id; }
 async function readThread(db:Db,threadId:string,profileId:string){
@@ -89,6 +104,13 @@ Deno.serve(async(req:Request)=>{
   const db=createClient(url,service,{auth:{persistSession:false,autoRefreshToken:false}});
   try{
     const profile=await loadProfile(db,verified.user); const profileId=profile.id as string; const payload=typeof body.payload==="object"&&body.payload!==null?body.payload as Record<string,unknown>:{};
+    if(body.action==="unread_count"){
+      const {data:threads,error}=await db.from("chat_threads").select("buyer_id,seller_id,last_message_at,last_sender_id,buyer_read_at,seller_read_at").or(`buyer_id.eq.${profileId},seller_id.eq.${profileId}`).not("last_message_at","is",null).limit(200);
+      if(error) throw new Error("chat_unread_load_failed");
+      const playerUnread=(threads??[]).filter(t=>{if(t.last_sender_id===profileId||!t.last_message_at)return false;const readAt=t.buyer_id===profileId?t.buyer_read_at:t.seller_read_at;return newer(t.last_message_at,readAt);}).length;
+      const systems=await systemChats(db,profileId);
+      return Response.json({ok:true,unread:playerUnread+systems.filter(s=>s.unread).length});
+    }
     if(body.action==="threads"){
       const {data:threads,error}=await db.from("chat_threads").select("id,listing_id,buyer_id,seller_id,last_message_at,last_message_preview,last_sender_id,buyer_read_at,seller_read_at,created_at,updated_at").or(`buyer_id.eq.${profileId},seller_id.eq.${profileId}`).order("updated_at",{ascending:false}).limit(100);
       if(error) throw new Error("chat_threads_load_failed"); const [enriched,systems]=await Promise.all([enrichThreads(db,threads??[],profileId),systemChats(db,profileId)]); return Response.json({ok:true,profileId,threads:threads??[],systemChats:systems,...enriched});
@@ -144,6 +166,11 @@ Deno.serve(async(req:Request)=>{
       const readColumn=thread.buyer_id===profileId?"buyer_read_at":"seller_read_at"; const oldRead=thread[readColumn]; let readAt=oldRead;
       if(thread.last_message_at&&thread.last_sender_id!==profileId&&newer(thread.last_message_at,oldRead)){ readAt=new Date().toISOString(); const u=await db.from("chat_threads").update({[readColumn]:readAt}).eq("id",threadId); if(u.error) throw new Error("chat_read_failed"); }
       const mr=await db.from("chat_messages").select("id,thread_id,sender_id,body,created_at").eq("thread_id",threadId).order("created_at",{ascending:true}).limit(300); if(mr.error) throw new Error("chat_messages_load_failed"); const enriched=await enrichThreads(db,[thread],profileId); return Response.json({ok:true,profileId,thread:{...thread,[readColumn]:readAt},messages:mr.data??[],...enriched});
+    }
+    if(body.action==="poll_thread"){
+      const threadId=typeof payload.threadId==="string"?payload.threadId:""; const since=typeof payload.since==="string"?payload.since:""; if(!threadId) return Response.json({ok:false,error:"invalid_payload"},{status:400}); const thread=await readThread(db,threadId,profileId); if(!thread) return Response.json({ok:false,error:"chat_not_found"},{status:404});
+      const readColumn=thread.buyer_id===profileId?"buyer_read_at":"seller_read_at"; let readAt=thread[readColumn]; if(thread.last_message_at&&thread.last_sender_id!==profileId&&newer(thread.last_message_at,readAt)){readAt=new Date().toISOString();const u=await db.from("chat_threads").update({[readColumn]:readAt}).eq("id",threadId);if(u.error)throw new Error("chat_read_failed");}
+      let query=db.from("chat_messages").select("id,thread_id,sender_id,body,created_at").eq("thread_id",threadId).order("created_at",{ascending:true}).limit(100); if(since) query=query.gt("created_at",since); const mr=await query; if(mr.error) throw new Error("chat_messages_load_failed"); return Response.json({ok:true,profileId,thread:{...thread,[readColumn]:readAt},messages:mr.data??[]});
     }
     if(body.action==="send_message"){
       const threadId=typeof payload.threadId==="string"?payload.threadId:""; const text=typeof payload.body==="string"?payload.body.trim():""; if(!threadId||!text||text.length>2000) return Response.json({ok:false,error:"invalid_message"},{status:400}); const thread=await readThread(db,threadId,profileId); if(!thread) return Response.json({ok:false,error:"chat_not_found"},{status:404}); const {data,error}=await db.from("chat_messages").insert({thread_id:threadId,sender_id:profileId,body:text}).select("id,thread_id,sender_id,body,created_at").single(); if(error||!data) throw new Error("chat_message_send_failed"); const readColumn=thread.buyer_id===profileId?"buyer_read_at":"seller_read_at"; const u=await db.from("chat_threads").update({[readColumn]:data.created_at}).eq("id",threadId); if(u.error) throw new Error("chat_read_failed"); return Response.json({ok:true,message:data});
