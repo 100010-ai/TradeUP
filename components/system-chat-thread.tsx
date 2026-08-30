@@ -15,7 +15,7 @@ function time(value: string) { return new Date(value).toLocaleTimeString("ru-RU"
 function day(value: string) { return new Date(value).toLocaleDateString("ru-RU", { day: "numeric", month: "long" }); }
 
 export default function SystemChatThread({ channel }: { channel: "tradeup" | "support" }) {
-  const session = useTelegramSession();
+  const { state: sessionState, callChatAction, openBot } = useTelegramSession();
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [messages, setMessages] = useState<SupportMessage[]>([]);
   const [ticket, setTicket] = useState<SupportTicket | null>(null);
@@ -28,20 +28,29 @@ export default function SystemChatThread({ channel }: { channel: "tradeup" | "su
   const loadInFlight = useRef(false);
 
   const load = useCallback(async (silent = false) => {
-    if (session.state !== "verified") { if (!silent) setLoading(false); return; }
+    if (sessionState !== "verified") { if (!silent) setLoading(false); return; }
     if (loadInFlight.current) return;
     loadInFlight.current = true;
     if (!silent) setLoading(true);
     try {
-      const result = await session.callChatAction("open_system_chat", { channel }) as OpenSystemResult;
+      const result = await callChatAction("open_system_chat", { channel }) as OpenSystemResult;
       if (channel === "tradeup") {
         const next = (result.messages ?? []) as Announcement[];
-        setAnnouncements((current) => current.length === next.length && current.at(-1)?.id === next.at(-1)?.id ? current : next);
+        setAnnouncements((current) => {
+          const currentKey = current.map((item) => `${item.id}:${item.published_at}`).join("|");
+          const nextKey = next.map((item) => `${item.id}:${item.published_at}`).join("|");
+          return currentKey === nextKey ? current : next;
+        });
       } else {
         const next = (result.messages ?? []) as SupportMessage[];
         setMessages((current) => current.length === next.length && current.at(-1)?.id === next.at(-1)?.id ? current : next);
         setTicket((current) => current?.id === result.ticket?.id && current?.status === result.ticket?.status && current?.updated_at === result.ticket?.updated_at ? current : result.ticket ?? null);
-        setTopics((current) => current.length === (result.topics ?? []).length ? current : result.topics ?? []);
+        const nextTopics = result.topics ?? [];
+        setTopics((current) => {
+          const currentKey = current.map((item) => `${item.id}:${item.title}:${item.sort_order}:${item.auto_reply}`).join("|");
+          const nextKey = nextTopics.map((item) => `${item.id}:${item.title}:${item.sort_order}:${item.auto_reply}`).join("|");
+          return currentKey === nextKey ? current : nextTopics;
+        });
       }
       setError(null);
     } catch { setError("Не удалось открыть чат"); }
@@ -49,10 +58,10 @@ export default function SystemChatThread({ channel }: { channel: "tradeup" | "su
       loadInFlight.current = false;
       if (!silent) setLoading(false);
     }
-  }, [channel, session]);
+  }, [channel, sessionState, callChatAction]);
 
   useEffect(() => {
-    if (session.state !== "verified") { if (["browser", "unavailable", "error"].includes(session.state)) setLoading(false); return; }
+    if (sessionState !== "verified") { if (["browser", "unavailable", "error"].includes(sessionState)) setLoading(false); return; }
     const poll = () => { if (document.visibilityState === "visible") void load(true); };
     void load();
     const timer = window.setInterval(poll, channel === "support" ? 5_000 : 60_000);
@@ -61,14 +70,14 @@ export default function SystemChatThread({ channel }: { channel: "tradeup" | "su
       window.clearInterval(timer);
       document.removeEventListener("visibilitychange", poll);
     };
-  }, [session.state, channel, load]);
+  }, [sessionState, channel, load]);
 
   useEffect(() => { endRef.current?.scrollIntoView({ block: "end" }); }, [announcements.length, messages.length]);
 
   async function chooseTopic(topicId: string) {
     if (busy) return;
     setBusy(true); setError(null);
-    try { await session.callChatAction("support_choose_topic", { topicId }); await load(true); }
+    try { await callChatAction("support_choose_topic", { topicId }); await load(true); }
     catch (reason) { setError(reason instanceof Error && reason.message === "support_already_requested" ? "Оператор уже вызван" : "Не удалось выбрать тему"); }
     finally { setBusy(false); }
   }
@@ -76,7 +85,7 @@ export default function SystemChatThread({ channel }: { channel: "tradeup" | "su
   async function callHuman() {
     if (busy) return;
     setBusy(true); setError(null);
-    try { await session.callChatAction("support_request_human"); await load(true); }
+    try { await callChatAction("support_request_human"); await load(true); }
     catch { setError("Не удалось вызвать поддержку"); }
     finally { setBusy(false); }
   }
@@ -86,12 +95,12 @@ export default function SystemChatThread({ channel }: { channel: "tradeup" | "su
     const body = text.trim();
     if (!body || busy) return;
     setBusy(true); setText(""); setError(null);
-    try { await session.callChatAction("support_send_message", { body }); await load(true); }
+    try { await callChatAction("support_send_message", { body }); await load(true); }
     catch { setText(body); setError("Сообщение не отправлено"); }
     finally { setBusy(false); }
   }
 
-  if (session.state !== "verified" && !loading) return <div className="systemChatScreen"><header className="chatFlowHeader"><Link href="/messages"><Icon name="arrowLeft"/></Link><strong>{channel === "tradeup" ? "TradeUP" : "Поддержка"}</strong></header><div className="flatAuth"><strong>Открой TradeUP в Telegram</strong><button onClick={session.openBot}>Открыть</button></div></div>;
+  if (sessionState !== "verified" && !loading) return <div className="systemChatScreen"><header className="chatFlowHeader"><Link href="/messages"><Icon name="arrowLeft"/></Link><strong>{channel === "tradeup" ? "TradeUP" : "Поддержка"}</strong></header><div className="flatAuth"><strong>Открой TradeUP в Telegram</strong><button onClick={openBot}>Открыть</button></div></div>;
 
   const supportStatus = ticket?.status ?? "bot";
   const statusText = supportStatus === "active" ? "Поддержка подключилась" : supportStatus === "waiting" ? "Ожидаем оператора" : supportStatus === "closed" ? "Диалог завершён" : "Автопомощь";
