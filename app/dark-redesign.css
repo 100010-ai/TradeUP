@@ -1,0 +1,204 @@
+:root {
+  color-scheme: dark;
+  --bg: #0d0f0d;
+  --surface: #151815;
+  --surface-soft: #1d211d;
+  --surface-strong: #252a24;
+  --text: #f4f3ed;
+  --muted: #989d94;
+  --muted-2: #6f746c;
+  --line: #2a2f29;
+  --accent: #f2c85b;
+  --accent-dark: #d7aa3e;
+  --accent-soft: rgba(242, 200, 91, .13);
+  --danger: #ef7770;
+  --danger-soft: rgba(239, 119, 112, .12);
+  --warning: #f2c85b;
+  --warning-soft: rgba(242, 200, 91, .11);
+  --shadow: 0 18px 50px rgba(0, 0, 0, .28);
+  --shadow-soft: 0 10px 30px rgba(0, 0, 0, .18);
+}
+html, body { background: var(--bg); color: var(--text); }
+body { background: radial-gradient(circle at 50% -10%, #191c18 0, var(--bg) 34%); }
+.appRoot { max-width: 980px; }
+.appHeader {
+  min-height: 64px; padding: max(10px, env(safe-area-inset-top)) 16px 10px;
+  background: rgba(13, 15, 13, .9); border-bottom-color: rgba(255,255,255,.06);
+}
+.brandLockup { font-size: 22px; letter-spacing: -1.05px; }
+.brandWord { color: #f4f3ed; }
+.brandUp { color: var(--accent); }
+.brandDot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
+.headerActions { gap: 8px; }
+.balanceButton { min-width: 94px; padding: 7px 10px; border-color: var(--line); border-radius: 12px; background: var(--surface); box-shadow: none; }
+.balanceButton span { color: var(--muted); }
+.balanceButton strong { color: var(--text); }
+.avatarButton { width: 40px; height: 40px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-soft); color: var(--accent); box-shadow: none; }
+.connectButton { border-radius: 12px; background: var(--accent); color: #1b180d; }
+.sessionStrip { margin: 8px 14px 0; border-color: rgba(242,200,91,.2); background: rgba(242,200,91,.06); }
+.sessionStrip button { background: var(--accent); color: #1b180d; }
+.pageCanvas { padding: 18px 14px calc(100px + env(safe-area-inset-bottom)); }
+
+.bottomBar {
+  width: min(100%, 980px); padding: 7px 10px calc(7px + env(safe-area-inset-bottom));
+  border-top-color: rgba(255,255,255,.07); background: rgba(13,15,13,.94); box-shadow: 0 -12px 34px rgba(0,0,0,.22);
+}
+.bottomItem { min-height: 50px; gap: 4px; border-radius: 12px; color: #737970; font-size: 9px; font-weight: 700; }
+.bottomItem svg { transition: transform .16s ease, color .16s ease; }
+.bottomItem.active { color: var(--accent); }
+.bottomItem.active svg { transform: translateY(-1px); }
+.sellNav { margin-top: 0; }
+.sellNav .bottomIcon { width: 38px; height: 38px; border-radius: 12px; background: var(--accent); color: #17140a; box-shadow: 0 8px 20px rgba(242,200,91,.14); }
+.sellNav.active .bottomIcon { background: #ffda72; color: #17140a; }
+.bottomIcon { display: grid; place-items: center; }
+
+.sectionEyebrow { color: var(--muted); }
+.primaryAction, .publishButton, .buyButton { background: var(--accent); color: #17140a; box-shadow: none; }
+.primaryAction:hover, .publishButton:hover, .buyButton:hover { background: #ffda72; }
+.actionMessage { border-color: #39322a; background: #211a17; color: #e7a49e; }
+.profitPositive { color: #f2c85b !important; }
+
+.marketIntro { display: flex; align-items: flex-end; justify-content: space-between; gap: 18px; margin: 4px 2px 16px; }
+.marketIntro h1 { margin: 4px 0 0; font-size: clamp(30px, 7vw, 46px); letter-spacing: -.05em; line-height: .95; }
+.marketIntro p { margin: 7px 0 0; color: var(--muted); font-size: 11px; }
+.marketIntroRight { display: flex; align-items: center; gap: 7px; }
+.marketMetric { min-width: 76px; padding: 9px 10px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+.marketMetric strong, .marketMetric span { display: block; }
+.marketMetric strong { font-size: 16px; letter-spacing: -.03em; }
+.marketMetric span { margin-top: 2px; color: var(--muted); font-size: 8px; }
+.quickSell { display: grid; width: 42px; height: 42px; place-items: center; border-radius: 12px; background: var(--accent); color: #17140a; text-decoration: none; }
+
+.marketToolbar { grid-template-columns: minmax(0, 1fr) 48px; gap: 8px; margin-top: 0; }
+.marketSearch { height: 50px; padding: 0 13px; border-color: var(--line); border-radius: 14px; background: var(--surface); box-shadow: none; }
+.marketSearch > span { display: grid; color: var(--muted); }
+.marketSearch input { color: var(--text); font-size: 13px; }
+.marketSearch input::placeholder { color: #6c716a; }
+.marketSearch button { display: grid; place-items: center; background: var(--surface-soft); color: var(--muted); }
+.sortButton { position: relative; display: grid; place-items: center; min-width: 48px; height: 50px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); color: var(--text); }
+.sortButton select { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+
+.categoryRail { gap: 8px; margin: 12px -14px 0; padding: 0 14px 4px; }
+.categoryTile { min-width: auto; gap: 8px; padding: 9px 11px; border-color: var(--line); border-radius: 12px; background: var(--surface); box-shadow: none; color: var(--muted); }
+.categoryTile > span { width: 28px; height: 28px; border-radius: 9px; background: var(--surface-soft); color: #a8ada5; }
+.categoryTile strong { color: inherit; font-size: 10px; }
+.categoryTile.active { border-color: rgba(242,200,91,.34); background: var(--accent-soft); color: var(--accent); }
+.categoryTile.active > span { background: rgba(242,200,91,.1); color: var(--accent); }
+.feedSection { margin-top: 24px; }
+.sectionTitleRow { margin-bottom: 12px; }
+.sectionTitleRow h2 { color: var(--text); font-size: 21px; }
+.liveStatus { padding: 6px 8px; border: 1px solid rgba(242,200,91,.16); background: rgba(242,200,91,.07); color: var(--accent); }
+.liveStatus i, .onlinePill i { background: var(--accent); }
+
+.listingGridProduct { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; }
+.listingCardProduct { border-color: var(--line); border-radius: 16px; background: var(--surface); box-shadow: none; }
+.listingCardProduct:hover { box-shadow: var(--shadow-soft); }
+.listingVisual { aspect-ratio: 1.12 / 1; background: var(--surface-soft); }
+.listingVisual img { object-fit: cover; }
+.productImageFallback { color: #676c65; }
+.dealBadge { left: 8px; top: 8px; padding: 5px 7px; border-radius: 8px; background: rgba(15,16,14,.88); color: var(--accent); border: 1px solid rgba(242,200,91,.2); }
+.conditionBadge { right: 8px; bottom: 8px; background: rgba(15,16,14,.86); color: #e8e7e2; }
+.listingCardContent { padding: 11px; }
+.listingCardTitle { font-size: 13px; }
+.listingPrice { margin-top: 5px; color: var(--text); font-size: 18px; }
+.listingSubtitle { color: var(--muted); }
+.sellerLine { margin-top: 9px; color: var(--muted); }
+.sellerMiniAvatar { border: 1px solid var(--line); background: var(--surface-soft); color: var(--text); }
+.sellerRating { margin-left: auto; display: inline-flex; align-items: center; gap: 3px; color: #c6a851; }
+.listingTime { color: var(--muted-2); }
+.listingSkeleton, .inventorySkeleton, .dealRowSkeleton, .detailSkeleton, .leaderboardSkeleton { border-color: var(--line); background: linear-gradient(105deg,#181b18 20%,#232723 40%,#181b18 60%); background-size: 240% 100%; }
+
+.category-phones, .category-computers, .category-consoles, .category-sneakers, .category-watches, .category-collectibles, .category-other { background: #1b1e1b; }
+.emptyPanel, .infoCard, .walletCard, .rankCard, .sellComposer, .dealSummaryGrid > div, .profileStatsGrid > div { border-color: var(--line); background: var(--surface); box-shadow: none; }
+.emptySymbol, .authGateIcon { background: var(--accent-soft); color: var(--accent); }
+.launchPanel { min-height: 190px; }
+
+.backLink { color: var(--muted); }
+.detailVisual { background: var(--surface-soft); box-shadow: none; }
+.detailVisualMeta { background: rgba(13,15,13,.86); border: 1px solid rgba(255,255,255,.06); }
+.detailVisualMeta strong { color: var(--accent); }
+.favoriteRound { border-color: var(--line); background: var(--surface); color: var(--muted); }
+.favoriteRound.active { border-color: rgba(242,200,91,.3); background: var(--accent-soft); color: var(--accent); }
+.detailDescription { color: #b2b6ae; }
+.detailFacts > div { background: var(--surface-soft); }
+.priceSignal { background: var(--surface-soft); }
+.priceSignal.good { background: var(--accent-soft); color: var(--accent); }
+.priceSignal.high { background: rgba(239,119,112,.1); color: #dc8a83; }
+.secondaryDanger { border-color: rgba(239,119,112,.18); background: var(--danger-soft); }
+.offerButton { border-color: var(--line); background: var(--surface); }
+.offerButton:hover { background: var(--surface-soft); }
+.offerComposer { border-color: rgba(242,200,91,.18); background: #171912; }
+.offerInputRow input { border-color: var(--line); background: #111310; color: var(--text); }
+.offerQuickRow button { background: var(--accent-soft); color: var(--accent); }
+.offerSubmit { background: var(--accent); color: #17140a; }
+
+.pageHeadline h1 { color: var(--text); }
+.starterBanner { border-color: rgba(242,200,91,.18); background: rgba(242,200,91,.06); }
+.starterBanner > span { display: grid; width: 38px; height: 38px; place-items: center; border-radius: 11px; background: var(--accent-soft); color: var(--accent); }
+.inventoryCard { border-color: var(--line); background: var(--surface); box-shadow: none; }
+.inventoryCard.selected { border-color: rgba(242,200,91,.55); box-shadow: 0 0 0 2px rgba(242,200,91,.08); }
+.inventorySelect { color: var(--text); }
+.inventoryVisual { background: var(--surface-soft); }
+.inventoryVisual i { background: rgba(13,15,13,.86); color: var(--text); }
+.listedBar { border-top-color: var(--line); background: #121412; }
+.listedBar a, .listedBar button { background: var(--surface-soft); }
+.sellComposer input, .sellComposer textarea { border-color: var(--line); background: #111310; color: var(--text); }
+.sellComposer input:focus, .sellComposer textarea:focus { border-color: rgba(242,200,91,.5); box-shadow: 0 0 0 3px rgba(242,200,91,.07); }
+.priceAdvisor > div { background: var(--surface-soft); }
+
+.authGate { border-color: var(--line); background: var(--surface); box-shadow: none; }
+.segmentedTabs { background: var(--surface-strong); }
+.segmentedTabs button { color: var(--muted); }
+.segmentedTabs button.active { background: #30352f; color: var(--text); box-shadow: none; }
+.dealRow, .offerCard, .leaderList { border-color: var(--line); background: var(--surface); }
+.dealIcon { color: var(--accent); }
+.dealType.sale { background: var(--accent-soft); color: var(--accent); }
+.dealType.buy { background: #202522; color: #aeb7af; }
+.offerStatus.pending { background: var(--accent-soft); color: var(--accent); }
+.offerStatus.accepted { background: rgba(242,200,91,.08); color: #d8c078; }
+.offerPerson { border-top-color: var(--line); }
+.acceptOffer { background: var(--accent); color: #17140a; }
+.declineOffer, .cancelOfferButton { background: var(--surface-soft); }
+.miniEmpty { border-color: var(--line); }
+
+.profileHeroCard { background: linear-gradient(145deg,#1b1e1b,#121412); border: 1px solid var(--line); box-shadow: none; }
+.profileAvatarXL { background: var(--surface-strong); color: var(--accent); }
+.onlinePill { background: var(--accent-soft); color: var(--accent); }
+.rankTrack { background: var(--surface-strong); }
+.rankTrack i { background: var(--accent); }
+.profileMenu > a { border-color: var(--line); background: var(--surface); }
+.profileMenu > a > div > span { background: var(--surface-soft); color: var(--accent); }
+.profileMenu b { color: var(--muted); }
+
+.podiumCard { border-color: var(--line); background: var(--surface); box-shadow: none; }
+.podiumCard.place-1, .podiumCard.place-2, .podiumCard.place-3 { background: var(--surface); border-color: var(--line); }
+.podiumCard.place-1 { border-color: rgba(242,200,91,.35); }
+.podiumCard > strong { color: var(--accent); }
+.leaderListHead { border-bottom-color: var(--line); background: var(--surface-soft); }
+.leaderRow { border-bottom-color: var(--line); }
+.leaderRating { display: inline-flex; align-items: center; gap: 4px; color: #d2b75f !important; }
+
+@media (max-width: 760px) {
+  .pageCanvas { padding: 14px 12px calc(96px + env(safe-area-inset-bottom)); }
+  .appHeader { padding-inline: 12px; }
+  .marketIntro { align-items: flex-start; margin-top: 0; }
+  .marketIntroRight { gap: 5px; }
+  .marketMetric { min-width: 62px; padding: 8px; }
+  .marketMetric strong { font-size: 14px; }
+  .marketMetric span { font-size: 7px; }
+  .categoryRail { margin-inline: -12px; padding-inline: 12px; }
+  .listingGridProduct { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .listingCardContent { padding: 9px; }
+  .listingCardTitle { font-size: 12px; }
+  .listingPrice { font-size: 16px; }
+  .sellerLine { font-size: 9px; }
+  .detailGrid, .detailLowerGrid { grid-template-columns: 1fr; }
+  .detailVisual { min-height: 360px; }
+}
+
+@media (max-width: 390px) {
+  .marketIntro p { display: none; }
+  .marketMetric:nth-child(2) { display: none; }
+  .listingGridProduct { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .listingSubtitle { font-size: 8px; }
+  .sellerLine > span:not(.sellerMiniAvatar) { max-width: 62px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+}
