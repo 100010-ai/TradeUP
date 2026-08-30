@@ -29,7 +29,7 @@ export default function NotificationLayer({ open, onClose }: { open: boolean; on
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState<PhoneNotification | null>(null);
   const baselineId = useRef<string | null>(null);
-  const mountedAt = useRef(Date.now());
+  const newestSeenAt = useRef(0);
   const toastTimer = useRef<number | null>(null);
 
   const load = useCallback(async () => {
@@ -52,15 +52,18 @@ export default function NotificationLayer({ open, onClose }: { open: boolean; on
   useEffect(() => {
     const latest = session.latestNotification;
     if (!latest) return;
+    const createdAt = new Date(latest.created_at).getTime();
+
     if (baselineId.current === null) {
       baselineId.current = latest.id;
+      if (Number.isFinite(createdAt)) newestSeenAt.current = createdAt;
       return;
     }
     if (baselineId.current === latest.id) return;
     baselineId.current = latest.id;
 
-    const createdAt = new Date(latest.created_at).getTime();
-    if (!Number.isFinite(createdAt) || createdAt < mountedAt.current - 2_000) return;
+    if (!Number.isFinite(createdAt) || createdAt <= newestSeenAt.current) return;
+    newestSeenAt.current = createdAt;
 
     setToast(latest);
     try { window.Telegram?.WebApp?.HapticFeedback?.notificationOccurred?.("success"); } catch { /* optional */ }
