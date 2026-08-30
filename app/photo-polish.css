@@ -1,0 +1,65 @@
+.listingVisual,
+.flatListingVisual,
+.flatDetailImage,
+.productPhoto,
+.inventoryItemImage,
+.sellItemImage {
+  position: relative;
+  overflow: hidden !important;
+  background: transparent !important;
+  isolation: isolate;
+  contain: paint;
+}
+
+.listingVisual .productImageMedia,
+.flatListingVisual .productImageMedia {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none !important;
+  object-fit: cover !important;
+  object-position: center !important;
+  transform: none !important;
+  transition: none !important;
+}
+
+.flatDetailImage .productImageMedia {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none !important;
+  object-fit: cover !important;
+  object-position: center !important;
+  transform: none !important;
+  transition: none !important;
+}
+
+.productImageFallback {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: #080808 !important;
+  color: #494949;
+}
+
+.listingCardProduct,
+.flatListingCard,
+.listingCardProduct:hover,
+.flatListingCard:hover,
+.listingCardProduct:active,
+.flatListingCard:active {
+  transform: none !important;
+  transition: none !important;
+}
+
+.flatListingVisual::before,
+.flatListingVisual::after,
+.listingVisual::before,
+.listingVisual::after,
+.flatDetailImage::before,
+.flatDetailImage::after {
+  display: none !important;
+  content: none !important;
+}
