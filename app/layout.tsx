@@ -1,30 +1,34 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
+import { TelegramSessionProvider } from "@/components/telegram-session";
 import "./globals.css";
-import "./telegram.css";
 
 export const metadata: Metadata = {
-  title: "TradeUP",
-  description: "Онлайн-игра про виртуальное перекупство",
+  title: { default: "TradeUP", template: "%s · TradeUP" },
+  description: "Онлайн-игра про виртуальное перекупство. Покупай дешевле, продавай дороже и расти на живом рынке игроков.",
+  applicationName: "TradeUP",
+  manifest: "/manifest.webmanifest",
+  formatDetection: { telephone: false },
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
   viewportFit: "cover",
-  themeColor: "#f4f4f2",
+  themeColor: "#f6f6f4",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="ru">
       <head>
-        <Script
-          src="https://telegram.org/js/telegram-web-app.js?63"
-          strategy="beforeInteractive"
-        />
+        <Script src="https://telegram.org/js/telegram-web-app.js?63" strategy="beforeInteractive" />
       </head>
-      <body>{children}</body>
+      <body>
+        <TelegramSessionProvider>{children}</TelegramSessionProvider>
+      </body>
     </html>
   );
 }

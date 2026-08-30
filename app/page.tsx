@@ -1,5 +1,6 @@
-import Market from "@/components/market";
+import AppShell from "@/components/app-shell";
+import MarketHome from "@/components/market-home";
 
 export default function HomePage() {
-  return <Market />;
+  return <AppShell><MarketHome /></AppShell>;
 }
