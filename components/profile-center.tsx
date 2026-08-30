@@ -65,6 +65,7 @@ export default function ProfileCenter() {
       </div>
 
       <nav className="compactProfileMenu">
+        <Link href="/explore"><Icon name="trend"/><span>Рынок+</span><small>цели · аукционы · коллекции</small><Icon name="chevronRight" size={16}/></Link>
         <Link href="/store"><Icon name="sparkles"/><span>Оформление</span><small>за Stars</small><Icon name="chevronRight" size={16}/></Link>
         <Link href="/sell"><Icon name="list"/><span>Мои объявления</span><small>{session.counts.listings}</small><Icon name="chevronRight" size={16}/></Link>
         <Link href="/messages"><Icon name="message"/><span>Чаты</span>{session.unreadChats > 0 ? <small>{session.unreadChats} новых</small> : <small>Сообщения</small>}<Icon name="chevronRight" size={16}/></Link>
