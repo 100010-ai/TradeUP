@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Icon from "@/components/icon";
 import ProductImage from "@/components/product-image";
 import { useTelegramSession } from "@/components/telegram-session";
@@ -46,22 +46,55 @@ export default function ChatThread({ id }: { id: string }) {
   const [error, setError] = useState<string | null>(null);
   const endRef = useRef<HTMLDivElement | null>(null);
   const firstLoad = useRef(true);
+  const loadInFlight = useRef(false);
 
-  async function load(silent = false) {
+  const load = useCallback(async (silent = false) => {
     if (session.state !== "verified") { if (!silent) setLoading(false); return; }
+    if (loadInFlight.current) return;
+    loadInFlight.current = true;
     try {
       const result = await session.callChatAction("open_thread", { threadId: id }) as OpenResult;
-      setThread(result.thread ?? null); setMessages(result.messages ?? []); setProfiles(result.profiles ?? []); setListings(result.listings ?? []); setProfileId(result.profileId ?? ""); setError(null);
+      const nextThread = result.thread ?? null;
+      const nextMessages = result.messages ?? [];
+      const nextProfiles = result.profiles ?? [];
+      const nextListings = result.listings ?? [];
+
+      setThread((current) => current?.id === nextThread?.id && current?.last_message_at === nextThread?.last_message_at ? current : nextThread);
+      setMessages((current) => {
+        const currentLast = current.at(-1)?.id;
+        const nextLast = nextMessages.at(-1)?.id;
+        return current.length === nextMessages.length && currentLast === nextLast ? current : nextMessages;
+      });
+      setProfiles((current) => {
+        const currentKey = current.map((item) => `${item.id}:${item.is_online}:${item.last_seen_at}`).join("|");
+        const nextKey = nextProfiles.map((item) => `${item.id}:${item.is_online}:${item.last_seen_at}`).join("|");
+        return currentKey === nextKey ? current : nextProfiles;
+      });
+      setListings((current) => {
+        const currentKey = current.map((item) => `${item.id}:${item.status}:${item.price}`).join("|");
+        const nextKey = nextListings.map((item) => `${item.id}:${item.status}:${item.price}`).join("|");
+        return currentKey === nextKey ? current : nextListings;
+      });
+      if (!silent) setProfileId(result.profileId ?? "");
+      setError(null);
     } catch { setError("Чат недоступен"); }
-    finally { if (!silent) setLoading(false); }
-  }
+    finally {
+      loadInFlight.current = false;
+      if (!silent) setLoading(false);
+    }
+  }, [id, session]);
 
   useEffect(() => {
     if (session.state !== "verified") { if (["browser","unavailable","error"].includes(session.state)) setLoading(false); return; }
+    const poll = () => { if (document.visibilityState === "visible") void load(true); };
     void load();
-    const timer = window.setInterval(() => { if (document.visibilityState === "visible") void load(true); }, 2200);
-    return () => window.clearInterval(timer);
-  }, [session.state, id]);
+    const timer = window.setInterval(poll, 4_000);
+    document.addEventListener("visibilitychange", poll);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", poll);
+    };
+  }, [session.state, id, load]);
 
   useEffect(() => {
     if (!messages.length) return;
@@ -92,7 +125,7 @@ export default function ChatThread({ id }: { id: string }) {
     <div className="chatScreen">
       <header className="chatFlowHeader">
         <Link href="/messages" aria-label="Назад"><Icon name="arrowLeft"/></Link>
-        <Link href={listing ? `/listing/${listing.id}` : "/messages"} className="chatContext">
+        <Link prefetch={false} href={listing ? `/listing/${listing.id}` : "/messages"} className="chatContext">
           <span className="chatProductThumb"><ProductImage src={type?.image_url} alt={type?.name ?? listing?.title ?? "Товар"} categoryId={type?.category_id ?? ""}/></span>
           <span className="chatContextText"><strong>{other?.first_name ?? "Сообщения"}</strong><small>{listing ? `${listing.title} · ${rubles(listing.price)}` : ""}</small></span>
         </Link>
