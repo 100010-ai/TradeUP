@@ -7,8 +7,8 @@ export default function manifest(): MetadataRoute.Manifest {
     description: "Онлайн-рынок виртуального перекупства",
     start_url: "/",
     display: "standalone",
-    background_color: "#11110f",
-    theme_color: "#11110f",
+    background_color: "#000000",
+    theme_color: "#000000",
     orientation: "portrait",
   };
 }
