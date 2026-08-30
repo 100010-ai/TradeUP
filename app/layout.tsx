@@ -22,6 +22,7 @@ import "./safe-area-guard.css";
 import "./depth.css";
 import "./item-context.css";
 import "./negotiations.css";
+import "./trader-identity.css";
 
 export const metadata: Metadata = {
   title: { default: "TradeUP", template: "%s · TradeUP" },
