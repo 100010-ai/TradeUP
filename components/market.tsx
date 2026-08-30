@@ -16,7 +16,27 @@ type Listing = {
   price: number;
   views: number;
   created_at: string;
+  inventory_items: {
+    item_types: {
+      category_id: string;
+      image_url: string | null;
+      name: string;
+    } | null;
+  } | null;
 };
+
+type TelegramUser = {
+  id: number;
+  first_name: string;
+  last_name?: string;
+  username?: string;
+  photo_url?: string;
+};
+
+type TelegramState = "checking" | "verified" | "browser" | "unavailable" | "error";
+
+const BOT_USERNAME = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME ?? "TradeUpGame_Bot";
+const BOT_URL = `https://t.me/${BOT_USERNAME}?startapp=market`;
 
 const money = new Intl.NumberFormat("ru-RU", {
   maximumFractionDigits: 0,
@@ -29,13 +49,17 @@ export default function Market() {
   const [activeCategory, setActiveCategory] = useState("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [telegramUser, setTelegramUser] = useState<TelegramUser | null>(null);
+  const [telegramState, setTelegramState] = useState<TelegramState>("checking");
 
   async function loadMarket() {
     const [categoriesResult, listingsResult] = await Promise.all([
       supabasePublic.from("categories").select("id,name,sort_order").order("sort_order"),
       supabasePublic
         .from("listings")
-        .select("id,title,description,price,views,created_at")
+        .select(
+          "id,title,description,price,views,created_at,inventory_items(item_types(category_id,image_url,name))",
+        )
         .eq("status", "active")
         .order("created_at", { ascending: false })
         .limit(50),
@@ -45,7 +69,7 @@ export default function Market() {
     if (listingsResult.error) throw listingsResult.error;
 
     setCategories(categoriesResult.data ?? []);
-    setListings((listingsResult.data ?? []) as Listing[]);
+    setListings((listingsResult.data ?? []) as unknown as Listing[]);
   }
 
   useEffect(() => {
@@ -74,14 +98,67 @@ export default function Market() {
     };
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+    const webApp = window.Telegram?.WebApp;
+
+    if (!webApp) {
+      setTelegramState("browser");
+      return;
+    }
+
+    webApp.ready();
+    webApp.expand();
+
+    if (!webApp.initData) {
+      setTelegramState("unavailable");
+      return;
+    }
+
+    void fetch("/api/auth/telegram", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ initData: webApp.initData }),
+    })
+      .then(async (response) => {
+        const payload = (await response.json()) as {
+          ok?: boolean;
+          user?: TelegramUser;
+        };
+
+        if (!response.ok || !payload.ok || !payload.user) {
+          throw new Error("Telegram auth failed");
+        }
+
+        if (!cancelled) {
+          setTelegramUser(payload.user);
+          setTelegramState("verified");
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setTelegramState("error");
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const filteredListings = useMemo(() => {
     const normalized = query.trim().toLocaleLowerCase("ru");
-    if (!normalized) return listings;
 
-    return listings.filter((listing) =>
-      `${listing.title} ${listing.description}`.toLocaleLowerCase("ru").includes(normalized),
-    );
-  }, [listings, query]);
+    return listings.filter((listing) => {
+      const categoryId = listing.inventory_items?.item_types?.category_id;
+      const matchesCategory = activeCategory === "all" || categoryId === activeCategory;
+      const matchesQuery =
+        !normalized ||
+        `${listing.title} ${listing.description}`.toLocaleLowerCase("ru").includes(normalized);
+
+      return matchesCategory && matchesQuery;
+    });
+  }, [activeCategory, listings, query]);
+
+  const profileInitial = telegramUser?.first_name?.trim().charAt(0).toLocaleUpperCase("ru") || "T";
 
   return (
     <main className="shell">
@@ -90,8 +167,43 @@ export default function Market() {
           <div className="brand">Trade<span>UP</span></div>
           <div className="brandCaption">онлайн-рынок</div>
         </div>
-        <button className="profileButton" type="button" aria-label="Профиль">К</button>
+        <button
+          className="profileButton"
+          type="button"
+          aria-label="Профиль"
+          onClick={() => {
+            if (telegramState !== "verified") window.location.href = BOT_URL;
+          }}
+        >
+          {profileInitial}
+        </button>
       </header>
+
+      {telegramState !== "verified" && (
+        <section className="tgNotice" aria-live="polite">
+          <div>
+            <strong>
+              {telegramState === "checking" ? "Подключаем Telegram…" : "Открой TradeUP через Telegram"}
+            </strong>
+            <span>
+              {telegramState === "error"
+                ? "Авторизация будет активна после добавления TELEGRAM_BOT_TOKEN на Vercel."
+                : `Mini App работает через @${BOT_USERNAME}.`}
+            </span>
+          </div>
+          {telegramState !== "checking" && (
+            <a href={BOT_URL} rel="noreferrer">Открыть</a>
+          )}
+        </section>
+      )}
+
+      {telegramState === "verified" && telegramUser && (
+        <section className="tgUserBar">
+          <span className="tgUserDot" />
+          <span>В сети как <strong>{telegramUser.first_name}</strong></span>
+          {telegramUser.username && <small>@{telegramUser.username}</small>}
+        </section>
+      )}
 
       <section className="hero">
         <p className="eyebrow">Виртуальный перекуп</p>
@@ -147,28 +259,31 @@ export default function Market() {
         {!loading && !error && filteredListings.length === 0 && (
           <div className="emptyState">
             <div className="emptyIcon">↗</div>
-            <h3>Рынок пока пуст</h3>
+            <h3>{activeCategory === "all" ? "Рынок пока пуст" : "В категории пока пусто"}</h3>
             <p>Здесь появится первое настоящее объявление игрока. Никаких фейковых лотов.</p>
             <button type="button" className="primaryButton">Выставить первым</button>
           </div>
         )}
 
         <div className="listingGrid">
-          {filteredListings.map((listing) => (
-            <article className="listingCard" key={listing.id}>
-              <div className="listingImagePlaceholder">
-                <span>TradeUP</span>
-              </div>
-              <div className="listingBody">
-                <h3>{listing.title}</h3>
-                <strong>{money.format(Number(listing.price))} ₽</strong>
-                <div className="listingMeta">
-                  <span>{listing.views} просмотров</span>
-                  <span>{new Date(listing.created_at).toLocaleDateString("ru-RU")}</span>
+          {filteredListings.map((listing) => {
+            const imageUrl = listing.inventory_items?.item_types?.image_url;
+            return (
+              <article className="listingCard" key={listing.id}>
+                <div className="listingImagePlaceholder">
+                  {imageUrl ? <img src={imageUrl} alt="" loading="lazy" /> : <span>TradeUP</span>}
                 </div>
-              </div>
-            </article>
-          ))}
+                <div className="listingBody">
+                  <h3>{listing.title}</h3>
+                  <strong>{money.format(Number(listing.price))} ₽</strong>
+                  <div className="listingMeta">
+                    <span>{listing.views} просмотров</span>
+                    <span>{new Date(listing.created_at).toLocaleDateString("ru-RU")}</span>
+                  </div>
+                </div>
+              </article>
+            );
+          })}
         </div>
       </section>
 
