@@ -9,6 +9,7 @@ import "./flat-extras.css";
 import "./no-panels.css";
 import "./product-grid.css";
 import "./compact-ui.css";
+import "./black-ui.css";
 
 export const metadata: Metadata = {
   title: { default: "TradeUP", template: "%s · TradeUP" },
@@ -24,7 +25,7 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   viewportFit: "cover",
-  themeColor: "#0f0f0e",
+  themeColor: "#000000",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
