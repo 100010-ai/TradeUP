@@ -1,5 +1,8 @@
 "use client";
 
+/* Telegram profile photos are arbitrary remote URLs. */
+/* eslint-disable @next/next/no-img-element */
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Icon from "@/components/icon";
 import { useTelegramSession } from "@/components/telegram-session";
@@ -29,6 +32,13 @@ function CosmeticVisual({ item }: { item: CosmeticItem }) {
   if (item.kind === "name_style") return <div className={`cosmeticNameSample ${item.style_key}`}>TradeUP</div>;
   if (item.kind === "title") return <div className={`cosmeticTitleSample ${item.style_key}`}>{item.name}</div>;
   return <div className={`cosmeticThemeSample ${item.style_key}`}><i/><span>TradeUP</span><small>профиль</small></div>;
+}
+
+function PreviewAvatar({ src, name }: { src?: string | null; name?: string | null }) {
+  const [failed, setFailed] = useState(false);
+  useEffect(() => setFailed(false), [src]);
+  const initial = name?.trim().charAt(0).toUpperCase() || "T";
+  return src && !failed ? <img src={src} alt="" decoding="async" onError={() => setFailed(true)}/> : <>{initial}</>;
 }
 
 export default function CosmeticsStore() {
@@ -91,6 +101,7 @@ export default function CosmeticsStore() {
   }
 
   async function equip(item: CosmeticItem) {
+    if (busyId) return;
     setBusyId(item.id);
     setMessage(null);
     try {
@@ -174,7 +185,7 @@ export default function CosmeticsStore() {
     </header>
 
     <section className={`cosmeticLivePreview ${themeStyle}`}>
-      <div className={`cosmeticLiveAvatar ${frameStyle}`}>{profile?.photo_url ? <img src={profile.photo_url} alt=""/> : profile?.first_name?.charAt(0).toUpperCase() ?? "T"}</div>
+      <div className={`cosmeticLiveAvatar ${frameStyle}`}><PreviewAvatar src={profile?.photo_url} name={profile?.first_name}/></div>
       <div className="cosmeticLiveIdentity"><div><strong className={nameStyle}>{profile?.first_name ?? "TradeUP"}</strong>{equippedTitle && <span>{equippedTitle}</span>}</div><small>{profile?.username ? `@${profile.username}` : "Твой профиль"}</small></div>
       <button type="button" onClick={() => setPreview(null)} disabled={!preview}>Сбросить пример</button>
     </section>
@@ -183,7 +194,7 @@ export default function CosmeticsStore() {
       {([['all','Всё'],['frame','Рамки'],['name_style','Имя'],['title','Титулы'],['profile_theme','Темы']] as const).map(([id,label]) => <button type="button" key={id} aria-pressed={tab === id} className={tab === id ? "active" : ""} onClick={() => setTab(id)}>{label}</button>)}
     </nav>
 
-    {message && <div className="cosmeticStoreNotice" role="status">{message}{!snapshot && !loading && <button type="button" className="inlineAction" onClick={() => void load()}>Повторить</button>}</div>}
+    {message && <div className="cosmeticStoreNotice" role="status" aria-live="polite">{message}{!snapshot && !loading && <button type="button" className="inlineAction" onClick={() => void load()}>Повторить</button>}</div>}
     {loading && <div className="cosmeticStoreLoading" aria-label="Загрузка оформления"><i/><i/><i/><i/></div>}
 
     {!loading && snapshot && visible.length === 0 && <div className="flatEmpty"><Icon name="sparkles" size={28}/><strong>В этой категории пока пусто</strong><span>Новые варианты оформления появятся здесь.</span></div>}
@@ -192,7 +203,7 @@ export default function CosmeticsStore() {
       return <article className={`cosmeticItem rarity-${item.rarity}`} key={item.id}>
         <button type="button" className="cosmeticPreviewButton" onClick={() => setPreview(item)} aria-label={`Предпросмотр ${item.name}`}><CosmeticVisual item={item}/><span className="cosmeticRarity">{rarityLabel(item.rarity)}</span></button>
         <div className="cosmeticItemCopy"><div><strong>{item.name}</strong><small>{kindLabel(item.kind)}</small></div><p>{item.description}</p></div>
-        {has ? <button type="button" className={active ? "cosmeticAction equipped" : "cosmeticAction"} onClick={() => void equip(item)} disabled={busy}>{busy ? "…" : active ? <><Icon name="check" size={15}/>Надето</> : "Надеть"}</button> : <button type="button" className="cosmeticAction buy" onClick={() => void buy(item)} disabled={Boolean(busyId)}>{busy ? "Открываем…" : <><Icon name="star" size={15}/>{item.stars_price}</>}</button>}
+        {has ? <button type="button" className={active ? "cosmeticAction equipped" : "cosmeticAction"} onClick={() => void equip(item)} disabled={Boolean(busyId)}>{busy ? "…" : active ? <><Icon name="check" size={15}/>Надето</> : "Надеть"}</button> : <button type="button" className="cosmeticAction buy" onClick={() => void buy(item)} disabled={Boolean(busyId)}>{busy ? "Открываем…" : <><Icon name="star" size={15}/>{item.stars_price}</>}</button>}
       </article>;
     })}</div>}
   </div>;
