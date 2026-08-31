@@ -1,0 +1,90 @@
+/* Small interaction rules that complement, but do not override, final geometry. */
+
+.messageSearch {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+.messageSearch input {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.messageSearch > button {
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  margin-right: -6px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #666;
+}
+
+.flatConfirmActions {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.flatConfirmActions .flatDangerAction,
+.flatConfirmActions .flatTextAction {
+  margin: 0 !important;
+}
+
+.flatRowConfirm {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.flatRowConfirm .flatRowAction {
+  min-width: 38px;
+  padding-inline: 7px;
+}
+.flatRowConfirm .flatRowAction.danger {
+  color: #e58881;
+}
+
+.flatSelectedItem > .flatTextAction {
+  width: auto;
+  min-height: 36px !important;
+  margin: 0 !important;
+  padding-inline: 4px !important;
+  text-align: right;
+}
+
+.flatChooseItem .flatNotice {
+  margin: 0 0 10px;
+}
+
+.flatInventorySection > .flatMuted,
+.flatFormField > .flatMuted {
+  display: block;
+  margin: 7px 0;
+  color: #6c6c68;
+  font-size: 9px;
+  line-height: 1.4;
+}
+
+.flatEmpty > .inlineAction,
+.notificationEmpty > .inlineAction,
+.flatInventorySection > .inlineAction {
+  width: fit-content;
+  margin-top: 10px;
+}
+
+.flatOfferForm .flatField > small,
+.flatListingForm .flatFormField > small {
+  display: block;
+  margin-top: 6px;
+  color: #686864;
+  font-size: 9px;
+  line-height: 1.35;
+}
+
+@media (max-width: 360px) {
+  .flatRowConfirm { gap: 2px; }
+  .flatRowConfirm .flatRowAction { min-width: 34px; padding-inline: 5px; }
+}
