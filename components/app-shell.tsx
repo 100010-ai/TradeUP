@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Icon, { type IconName } from "@/components/icon";
@@ -26,13 +26,14 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const session = useTelegramSession();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const closeNotifications = useCallback(() => setNotificationsOpen(false), []);
   const initial = session.user?.first_name?.trim().charAt(0).toUpperCase() || "T";
   const flowMode = pathname.startsWith("/messages/") || pathname.startsWith("/sell/new");
   const balanceLabel = session.profile ? rubles(session.profile.balance) : "";
 
   return (
     <div className={`appRoot ${flowMode ? "flowMode" : ""}`}>
-      <NotificationLayer open={notificationsOpen} onClose={() => setNotificationsOpen(false)} />
+      <NotificationLayer open={notificationsOpen} onClose={closeNotifications} />
 
       {!flowMode && (
         <header className="appHeader">
