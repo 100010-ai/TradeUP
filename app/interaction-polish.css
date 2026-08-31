@@ -84,7 +84,50 @@
   line-height: 1.35;
 }
 
+.actionMessage:has(.dealsRetry) {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.actionMessage:has(.dealsRetry) > span {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.dealsRetry {
+  flex: 0 0 auto;
+  min-height: 36px;
+  padding: 0 10px;
+  border: 1px solid #2c2c2c;
+  border-radius: 8px;
+  background: #0b0b0b;
+  color: #bdbdb8;
+  font: inherit;
+  font-size: 9px;
+  font-weight: 750;
+}
+
+.compactProfileMenu a {
+  transition: background-color 120ms ease, color 120ms ease;
+}
+.compactProfileMenu a:focus-visible {
+  outline-offset: -2px !important;
+}
+.compactRankTrack[role="progressbar"] {
+  overflow: hidden;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .compactProfileMenu a:hover {
+    background: #050505;
+  }
+  .dealsRetry:hover {
+    border-color: #3a3a3a;
+    color: #eee;
+  }
+}
+
 @media (max-width: 360px) {
   .flatRowConfirm { gap: 2px; }
   .flatRowConfirm .flatRowAction { min-width: 34px; padding-inline: 5px; }
+  .actionMessage:has(.dealsRetry) { align-items: flex-start; flex-direction: column; }
 }
