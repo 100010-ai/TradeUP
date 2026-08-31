@@ -1,5 +1,8 @@
 "use client";
 
+/* Telegram profile photos are arbitrary remote URLs. */
+/* eslint-disable @next/next/no-img-element */
+
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Icon from "@/components/icon";
@@ -38,6 +41,13 @@ function presenceLabel(profile: Profile | null) {
   return `был ${lastSeen.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}`;
 }
 
+function PeerAvatar({ src, name }: { src?: string | null; name?: string | null }) {
+  const [failed, setFailed] = useState(false);
+  useEffect(() => setFailed(false), [src]);
+  const initial = name?.trim().charAt(0).toUpperCase() || "T";
+  return src && !failed ? <img src={src} alt="" decoding="async" onError={() => setFailed(true)}/> : <span>{initial}</span>;
+}
+
 export default function ChatThread({ id }: { id: string }) {
   const { state: sessionState, callChatAction, openBot } = useTelegramSession();
   const [thread, setThread] = useState<Thread | null>(null);
@@ -53,6 +63,7 @@ export default function ChatThread({ id }: { id: string }) {
   const requestInFlight = useRef(false);
   const lastMessageAt = useRef("");
   const localSequence = useRef(0);
+  const sendingBodies = useRef(new Set<string>());
 
   const load = useCallback(async (silent = false) => {
     if (sessionState !== "verified") { if (!silent) setLoading(false); return; }
@@ -136,6 +147,9 @@ export default function ChatThread({ id }: { id: string }) {
   }
 
   async function sendBody(body: string, localId?: string) {
+    const sendKey = localId ?? body;
+    if (sendingBodies.current.has(sendKey)) return;
+    sendingBodies.current.add(sendKey);
     if (!localId) localSequence.current += 1;
     const tempId = localId ?? `local-${localSequence.current}`;
     const now = new Date().toISOString();
@@ -150,6 +164,8 @@ export default function ChatThread({ id }: { id: string }) {
       window.Telegram?.WebApp?.HapticFeedback?.impactOccurred?.("light");
     } catch {
       setMessages((current) => current.map((item) => item.id === tempId ? { ...item, clientState: "failed" } : item));
+    } finally {
+      sendingBodies.current.delete(sendKey);
     }
   }
 
@@ -172,7 +188,7 @@ export default function ChatThread({ id }: { id: string }) {
     <header className="chatFlowHeader professionalChatHeader">
       <Link href="/messages" aria-label="Назад к чатам" className="chatBack"><Icon name="arrowLeft"/></Link>
       <div className="chatPeer">
-        <div className="chatPeerAvatar">{other?.photo_url ? <img src={other.photo_url} alt=""/> : <span>{other?.first_name?.charAt(0).toUpperCase() ?? "T"}</span>}{other?.is_online && <i aria-label="Онлайн"/>}</div>
+        <div className="chatPeerAvatar"><PeerAvatar src={other?.photo_url} name={other?.first_name}/>{other?.is_online && <i aria-label="Онлайн"/>}</div>
         <div><strong>{other?.first_name ?? "Сообщения"}</strong><small className={other?.is_online ? "online" : ""}>{presenceLabel(other)}</small></div>
       </div>
     </header>
