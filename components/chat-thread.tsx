@@ -58,6 +58,10 @@ export default function ChatThread({ id }: { id: string }) {
     if (sessionState !== "verified") { if (!silent) setLoading(false); return; }
     if (requestInFlight.current) return;
     requestInFlight.current = true;
+    if (!silent) {
+      setLoading(true);
+      setError(null);
+    }
     try {
       const result = await callChatAction("open_thread", { threadId: id }) as OpenResult;
       const nextMessages = result.messages ?? [];
@@ -67,10 +71,17 @@ export default function ChatThread({ id }: { id: string }) {
         const serverIds = new Set(nextMessages.map((item) => item.id));
         return [...nextMessages, ...pending.filter((item) => !serverIds.has(item.id))];
       });
-      setProfiles(result.profiles ?? []); setListings(result.listings ?? []); setProfileId(result.profileId ?? "");
-      lastMessageAt.current = nextMessages.at(-1)?.created_at ?? lastMessageAt.current; setError(null);
-    } catch { setError("Чат временно недоступен"); }
-    finally { requestInFlight.current = false; if (!silent) setLoading(false); }
+      setProfiles(result.profiles ?? []);
+      setListings(result.listings ?? []);
+      setProfileId(result.profileId ?? "");
+      lastMessageAt.current = nextMessages.at(-1)?.created_at ?? lastMessageAt.current;
+      setError(null);
+    } catch {
+      if (!silent) setError("Чат временно недоступен");
+    } finally {
+      requestInFlight.current = false;
+      if (!silent) setLoading(false);
+    }
   }, [id, sessionState, callChatAction]);
 
   const poll = useCallback(async () => {
@@ -91,8 +102,9 @@ export default function ChatThread({ id }: { id: string }) {
         if (newest && (!lastMessageAt.current || new Date(newest).getTime() > new Date(lastMessageAt.current).getTime())) lastMessageAt.current = newest;
       }
       setError(null);
-    } catch { /* keep the current conversation visible */ }
-    finally { requestInFlight.current = false; }
+    } catch {
+      // Keep the current conversation visible during transient poll failures.
+    } finally { requestInFlight.current = false; }
   }, [id, sessionState, callChatAction]);
 
   useEffect(() => {
@@ -133,7 +145,7 @@ export default function ChatThread({ id }: { id: string }) {
       const result = await callChatAction("send_message", { threadId: id, body });
       const serverMessage = result.message as Message | undefined;
       if (!serverMessage) throw new Error("missing_message");
-      setMessages((current) => current.map((item) => item.id === tempId ? serverMessage : item));
+      setMessages((current) => current.filter((item) => item.id !== serverMessage.id || item.id === tempId).map((item) => item.id === tempId ? serverMessage : item));
       if (!lastMessageAt.current || new Date(serverMessage.created_at).getTime() > new Date(lastMessageAt.current).getTime()) lastMessageAt.current = serverMessage.created_at;
       window.Telegram?.WebApp?.HapticFeedback?.impactOccurred?.("light");
     } catch {
@@ -142,46 +154,53 @@ export default function ChatThread({ id }: { id: string }) {
   }
 
   function send(event: React.FormEvent) {
-    event.preventDefault(); const body = text.trim(); if (!body || !profileId) return;
-    setText(""); setError(null); void sendBody(body);
+    event.preventDefault();
+    const body = text.trim();
+    if (!body || !profileId) return;
+    setText("");
+    setError(null);
+    void sendBody(body);
   }
 
-  if (sessionState !== "verified" && !loading) return <div className="chatScreen"><div className="chatFlowHeader"><Link href="/messages"><Icon name="arrowLeft"/></Link><strong>Чат</strong></div><div className="flatAuth"><strong>Открой TradeUP в Telegram</strong><button onClick={openBot}>Открыть</button></div></div>;
+  if (sessionState !== "verified" && !loading) return <div className="chatScreen"><div className="chatFlowHeader"><Link href="/messages"><Icon name="arrowLeft"/></Link><strong>Чат</strong></div><div className="flatAuth"><strong>Открой TradeUP в Telegram</strong><button type="button" onClick={openBot}>Открыть</button></div></div>;
+
+  if (!loading && error && !thread) {
+    return <div className="chatScreen professionalChat"><header className="chatFlowHeader professionalChatHeader"><Link href="/messages" aria-label="Назад" className="chatBack"><Icon name="arrowLeft"/></Link><div className="chatPeer"><div><strong>Чат</strong><small>не загрузился</small></div></div></header><div className="routeStatePage"><Icon name="info" size={30}/><h1>Чат временно недоступен</h1><p>Проверь соединение. Тексты сообщений никуда не пропали.</p><div className="routeStateActions"><button type="button" className="inlineAction primary" onClick={() => void load()}>Повторить</button><Link className="inlineAction" href="/messages">К чатам</Link></div></div></div>;
+  }
 
   return <div className="chatScreen professionalChat">
     <header className="chatFlowHeader professionalChatHeader">
-      <Link href="/messages" aria-label="Назад" className="chatBack"><Icon name="arrowLeft"/></Link>
+      <Link href="/messages" aria-label="Назад к чатам" className="chatBack"><Icon name="arrowLeft"/></Link>
       <div className="chatPeer">
-        <div className="chatPeerAvatar">{other?.photo_url ? <img src={other.photo_url} alt=""/> : <span>{other?.first_name?.charAt(0).toUpperCase() ?? "T"}</span>}{other?.is_online && <i/>}</div>
+        <div className="chatPeerAvatar">{other?.photo_url ? <img src={other.photo_url} alt=""/> : <span>{other?.first_name?.charAt(0).toUpperCase() ?? "T"}</span>}{other?.is_online && <i aria-label="Онлайн"/>}</div>
         <div><strong>{other?.first_name ?? "Сообщения"}</strong><small className={other?.is_online ? "online" : ""}>{presenceLabel(other)}</small></div>
       </div>
-      <button type="button" className="chatMore" aria-label="Ещё"><Icon name="more" size={20}/></button>
     </header>
 
-    {listing && <Link prefetch={false} href={`/listing/${listing.id}`} className="chatListingStrip">
+    {listing && <Link prefetch={false} href={`/listing/${listing.id}`} className="chatListingStrip" aria-label={`${listing.title}, ${rubles(listing.price)}`}>
       <span className="chatProductThumb"><ProductImage src={type?.image_url} alt={type?.name ?? listing.title} categoryId={type?.category_id ?? ""}/></span>
       <span><strong>{listing.title}</strong><small>{rubles(listing.price)} · {listing.status === "active" ? "в продаже" : "объявление"}</small></span>
       <Icon name="chevronRight" size={17}/>
     </Link>}
 
-    {loading && <div className="chatLoading" />}
-    {error && <div className="chatError">{error}</div>}
+    {loading && <div className="chatLoading" aria-label="Загрузка сообщений" />}
+    {error && thread && <div className="chatError" role="status">{error}</div>}
 
-    {!loading && <div className="chatMessages professionalChatMessages">{messages.length === 0 && <div className="chatStart"><strong>Начните диалог</strong><span>Уточните состояние, цену или детали сделки.</span></div>}{messages.map((message, index) => {
+    {!loading && <div className="chatMessages professionalChatMessages" aria-live="polite">{messages.length === 0 && <div className="chatStart"><strong>Начните диалог</strong><span>Уточните состояние, цену или детали сделки.</span></div>}{messages.map((message, index) => {
       const own = message.sender_id === profileId;
       const prev = messages[index - 1], showDay = !prev || dayKey(prev.created_at) !== dayKey(message.created_at);
       const state = own ? delivery(message) : null;
       return <div key={message.id}>{showDay && <div className="chatDay">{dayLabel(message.created_at)}</div>}<div className={own ? "chatBubbleRow own" : "chatBubbleRow"}>
         <div className={own ? `chatBubble own delivery-${state}` : "chatBubble"}>
           <span className="chatBubbleText">{message.body}</span>
-          <span className="chatMessageMeta"><time>{timeLabel(message.created_at)}</time>{own && state === "pending" && <span className="chatDelivery pending"><Icon name="history" size={12}/>Ожидание</span>}{own && state === "sent" && <span className="chatDelivery sent"><Icon name="check" size={12}/>Отправлено</span>}{own && state === "read" && <span className="chatDelivery read"><span className="doubleCheck"><Icon name="check" size={12}/><Icon name="check" size={12}/></span>Прочитано</span>}{own && state === "failed" && <button type="button" className="chatDelivery failed" onClick={() => void sendBody(message.body, message.id)}>Повторить</button>}</span>
+          <span className="chatMessageMeta"><time dateTime={message.created_at}>{timeLabel(message.created_at)}</time>{own && state === "pending" && <span className="chatDelivery pending"><Icon name="history" size={12}/>Ожидание</span>}{own && state === "sent" && <span className="chatDelivery sent"><Icon name="check" size={12}/>Отправлено</span>}{own && state === "read" && <span className="chatDelivery read"><span className="doubleCheck"><Icon name="check" size={12}/><Icon name="check" size={12}/></span>Прочитано</span>}{own && state === "failed" && <button type="button" className="chatDelivery failed" onClick={() => void sendBody(message.body, message.id)}>Повторить</button>}</span>
         </div>
       </div></div>;
     })}<div ref={endRef}/></div>}
 
     <form className="chatComposer professionalComposer" onSubmit={send}>
-      <textarea value={text} onChange={(event) => setText(event.target.value.slice(0, 2000))} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); event.currentTarget.form?.requestSubmit(); } }} placeholder="Сообщение" rows={1}/>
-      <button type="submit" aria-label="Отправить" disabled={!text.trim()}><Icon name="send" size={20}/></button>
+      <textarea value={text} onChange={(event) => setText(event.target.value.slice(0, 2000))} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); event.currentTarget.form?.requestSubmit(); } }} placeholder="Сообщение" aria-label="Сообщение" maxLength={2000} rows={1}/>
+      <button type="submit" aria-label="Отправить сообщение" disabled={!text.trim() || !profileId}><Icon name="send" size={20}/></button>
     </form>
   </div>;
 }
