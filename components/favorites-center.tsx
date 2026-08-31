@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Icon from "@/components/icon";
 import ListingCard from "@/components/listing-card";
 import { useTelegramSession } from "@/components/telegram-session";
@@ -14,22 +14,43 @@ export default function FavoritesCenter() {
   const [listings, setListings] = useState<MarketListing[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const sessionState = session.state;
+  const callAction = session.callAction;
+
+  const load = useCallback(async () => {
+    if (sessionState !== "verified") {
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await callAction("favorites") as FavoritesResult;
+      setListings(result.listings ?? []);
+    } catch {
+      setError("Не удалось загрузить избранное");
+    } finally {
+      setLoading(false);
+    }
+  }, [sessionState, callAction]);
 
   useEffect(() => {
-    if (session.state !== "verified") { if (["browser", "unavailable", "error"].includes(session.state)) setLoading(false); return; }
-    setLoading(true);
-    void session.callAction("favorites").then((result) => setListings(((result as FavoritesResult).listings ?? []) as MarketListing[])).catch((reason) => setError(reason instanceof Error ? reason.message : "Не удалось загрузить избранное")).finally(() => setLoading(false));
-  }, [session.state]);
+    if (sessionState === "verified") void load();
+    else if (["browser", "unavailable", "error"].includes(sessionState)) setLoading(false);
+  }, [sessionState, load]);
 
-  if (session.state !== "verified" && !loading) {
-    return <div className="authGate compactGate"><div className="authGateIcon"><Icon name="heart" /></div><span className="sectionEyebrow">Избранное</span><h1>Сохраняй выгодные лоты</h1><p>Войди через Telegram, и избранное будет привязано к игровому профилю.</p><button type="button" className="primaryAction" onClick={session.openBot}>Открыть TradeUP</button></div>;
+  if (sessionState !== "verified" && !loading) {
+    return <div className="flatAuth"><Icon name="heart" size={32}/><strong>Избранное доступно в Telegram</strong><span>Сохраняй лоты и возвращайся к ним позже.</span><button type="button" onClick={session.openBot}>Открыть TradeUP</button></div>;
   }
 
-  return <div className="collectionPage">
-    <div className="pageHeadline"><div><span className="sectionEyebrow">Избранное</span><h1>Сохранённые лоты</h1><p>Следи за тем, что хочешь забрать позже.</p></div><div className="inventoryCounter"><strong>{listings.length}</strong><span>лотов</span></div></div>
-    {loading && <div className="listingGridProduct">{Array.from({ length: 4 }).map((_, index) => <div className="listingSkeleton" key={index} />)}</div>}
-    {error && <div className="actionMessage">{error}</div>}
-    {!loading && !error && listings.length === 0 && <div className="emptyPanel"><div className="emptySymbol"><Icon name="heart" /></div><h3>Пока ничего не сохранено</h3><p>Добавляй лоты в избранное из карточки товара.</p><Link href="/" className="primaryAction">Смотреть рынок</Link></div>}
-    {!loading && listings.length > 0 && <div className="listingGridProduct">{listings.map((listing) => <ListingCard key={listing.id} listing={listing} />)}</div>}
-  </div>;
+  return (
+    <div className="favoritesPage" aria-busy={loading}>
+      <div className="flatPageTitle"><h1>Избранное</h1><span>{loading ? "…" : `${listings.length} лотов`}</span></div>
+
+      {loading && <div className="listingGridProduct flatGrid" aria-hidden="true">{Array.from({ length: 4 }).map((_, index) => <div className="listingSkeleton flatSkeleton" key={index} />)}</div>}
+      {!loading && error && <div className="flatEmpty" role="alert"><Icon name="info" size={30}/><strong>Не удалось загрузить</strong><span>{error}</span><button type="button" className="inlineAction" onClick={() => void load()}>Повторить</button></div>}
+      {!loading && !error && listings.length === 0 && <div className="flatEmpty"><Icon name="heart" size={30}/><strong>Пока ничего не сохранено</strong><span>Добавляй интересные лоты в избранное из карточки товара.</span><Link href="/" className="inlineAction primary">Смотреть рынок</Link></div>}
+      {!loading && !error && listings.length > 0 && <div className="listingGridProduct flatGrid">{listings.map((listing, index) => <ListingCard key={listing.id} listing={listing} eager={index < 2} />)}</div>}
+    </div>
+  );
 }
