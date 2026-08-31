@@ -25,32 +25,59 @@ function relativeTime(value: string) {
 export default function NotificationLayer({ open, onClose }: { open: boolean; onClose: () => void }) {
   const router = useRouter();
   const session = useTelegramSession();
+  const sessionState = session.state;
+  const callNotificationAction = session.callNotificationAction;
+  const latestNotification = session.latestNotification;
+  const unreadNotifications = session.unreadNotifications;
   const [items, setItems] = useState<PhoneNotification[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState(false);
   const [toast, setToast] = useState<PhoneNotification | null>(null);
   const baselineId = useRef<string | null>(null);
   const newestSeenAt = useRef(0);
   const toastTimer = useRef<number | null>(null);
+  const closeButtonRef = useRef<HTMLButtonElement | null>(null);
 
   const load = useCallback(async () => {
-    if (session.state !== "verified") return;
+    if (sessionState !== "verified") return;
     setLoading(true);
+    setLoadError(false);
     try {
-      const result = await session.callNotificationAction("list");
+      const result = await callNotificationAction("list");
       setItems(Array.isArray(result.notifications) ? result.notifications as PhoneNotification[] : []);
     } catch {
-      setItems([]);
+      setLoadError(true);
     } finally {
       setLoading(false);
     }
-  }, [session.state, session.callNotificationAction]);
+  }, [sessionState, callNotificationAction]);
 
   useEffect(() => {
     if (open) void load();
   }, [open, load]);
 
   useEffect(() => {
-    const latest = session.latestNotification;
+    if (!open) return;
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const focusTimer = window.setTimeout(() => closeButtonRef.current?.focus(), 0);
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      onClose();
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      window.clearTimeout(focusTimer);
+      document.removeEventListener("keydown", onKeyDown);
+      document.body.style.overflow = previousOverflow;
+      previousFocus?.focus();
+    };
+  }, [open, onClose]);
+
+  useEffect(() => {
+    const latest = latestNotification;
     if (!latest) return;
     const createdAt = new Date(latest.created_at).getTime();
 
@@ -69,7 +96,7 @@ export default function NotificationLayer({ open, onClose }: { open: boolean; on
     try { window.Telegram?.WebApp?.HapticFeedback?.notificationOccurred?.("success"); } catch { /* optional */ }
     if (toastTimer.current !== null) window.clearTimeout(toastTimer.current);
     toastTimer.current = window.setTimeout(() => setToast(null), 5_500);
-  }, [session.latestNotification]);
+  }, [latestNotification]);
 
   useEffect(() => () => {
     if (toastTimer.current !== null) window.clearTimeout(toastTimer.current);
@@ -77,7 +104,7 @@ export default function NotificationLayer({ open, onClose }: { open: boolean; on
 
   async function openNotification(item: PhoneNotification) {
     if (!item.read_at) {
-      void session.callNotificationAction("mark_read", { notificationId: item.id });
+      void callNotificationAction("mark_read", { notificationId: item.id });
       setItems((current) => current.map((entry) => entry.id === item.id ? { ...entry, read_at: new Date().toISOString() } : entry));
     }
     setToast(null);
@@ -86,32 +113,44 @@ export default function NotificationLayer({ open, onClose }: { open: boolean; on
   }
 
   async function markAll() {
-    await session.callNotificationAction("mark_all").catch(() => undefined);
+    await callNotificationAction("mark_all").catch(() => undefined);
     const now = new Date().toISOString();
     setItems((current) => current.map((item) => ({ ...item, read_at: item.read_at ?? now })));
   }
 
   return <>
-    {toast && !open && <button className="phoneNotificationToast" type="button" onClick={() => void openNotification(toast)}>
-      <span className="phoneNotificationApp"><Icon name={iconFor(toast.type)} size={17}/></span>
-      <span className="phoneNotificationCopy"><span className="phoneNotificationMeta"><b>TradeUP</b><time>сейчас</time></span><strong>{toast.title}</strong><small>{toast.body}</small></span>
-    </button>}
+    {toast && !open && (
+      <button className="phoneNotificationToast" type="button" onClick={() => void openNotification(toast)} aria-label={`${toast.title}. ${toast.body}`}>
+        <span className="phoneNotificationApp"><Icon name={iconFor(toast.type)} size={17}/></span>
+        <span className="phoneNotificationCopy"><span className="phoneNotificationMeta"><b>TradeUP</b><time>сейчас</time></span><strong>{toast.title}</strong><small>{toast.body}</small></span>
+      </button>
+    )}
 
-    {open && <div className="notificationCenter" role="dialog" aria-modal="true" aria-label="Уведомления">
-      <header className="notificationCenterHeader">
-        <button type="button" onClick={onClose} aria-label="Закрыть"><Icon name="arrowLeft" size={22}/></button>
-        <strong>Уведомления</strong>
-        <button type="button" className="notificationReadAll" disabled={session.unreadNotifications === 0} onClick={() => void markAll()}>Прочитать все</button>
-      </header>
-      <div className="notificationCenterBody">
-        {loading && <div className="notificationLoading"><i/><i/><i/></div>}
-        {!loading && items.length === 0 && <div className="notificationEmpty"><Icon name="bell" size={30}/><strong>Пока тихо</strong><span>Сообщения, предложения и сделки появятся здесь.</span></div>}
-        {!loading && items.map((item) => <button type="button" key={item.id} className={item.read_at ? "notificationRow" : "notificationRow unread"} onClick={() => void openNotification(item)}>
-          <span className="notificationTypeIcon"><Icon name={iconFor(item.type)} size={18}/></span>
-          <span className="notificationRowText"><span><strong>{item.title}</strong><time>{relativeTime(item.created_at)}</time></span><small>{item.body}</small></span>
-          {!item.read_at && <i className="notificationUnreadDot"/>}
-        </button>)}
+    {open && (
+      <div id="tradeup-notification-center" className="notificationCenter" role="dialog" aria-modal="true" aria-labelledby="tradeup-notification-title">
+        <header className="notificationCenterHeader">
+          <button ref={closeButtonRef} type="button" onClick={onClose} aria-label="Закрыть уведомления"><Icon name="arrowLeft" size={22}/></button>
+          <strong id="tradeup-notification-title">Уведомления</strong>
+          <button type="button" className="notificationReadAll" disabled={unreadNotifications === 0 || loading} onClick={() => void markAll()}>Прочитать все</button>
+        </header>
+        <div className="notificationCenterBody" aria-live="polite">
+          {loading && <div className="notificationLoading" aria-label="Загрузка уведомлений"><i/><i/><i/></div>}
+          {!loading && loadError && (
+            <div className="notificationEmpty">
+              <Icon name="info" size={30}/><strong>Не удалось обновить</strong><span>Проверь соединение и попробуй ещё раз.</span>
+              <button type="button" className="inlineAction" onClick={() => void load()}>Повторить</button>
+            </div>
+          )}
+          {!loading && !loadError && items.length === 0 && <div className="notificationEmpty"><Icon name="bell" size={30}/><strong>Пока тихо</strong><span>Сообщения, предложения и сделки появятся здесь.</span></div>}
+          {!loading && !loadError && items.map((item) => (
+            <button type="button" key={item.id} className={item.read_at ? "notificationRow" : "notificationRow unread"} onClick={() => void openNotification(item)}>
+              <span className="notificationTypeIcon"><Icon name={iconFor(item.type)} size={18}/></span>
+              <span className="notificationRowText"><span><strong>{item.title}</strong><time dateTime={item.created_at}>{relativeTime(item.created_at)}</time></span><small>{item.body}</small></span>
+              {!item.read_at && <i className="notificationUnreadDot" aria-hidden="true"/>}
+            </button>
+          ))}
+        </div>
       </div>
-    </div>}
+    )}
   </>;
 }

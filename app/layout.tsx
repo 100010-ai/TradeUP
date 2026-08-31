@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import { TelegramSessionProvider } from "@/components/telegram-session";
 import TelegramSafeAreaGuard from "@/components/telegram-safe-area-guard";
+
 import "./globals.css";
 import "./product-plus.css";
 import "./dark-redesign.css";
@@ -11,18 +12,21 @@ import "./no-panels.css";
 import "./product-grid.css";
 import "./compact-ui.css";
 import "./black-ui.css";
-import "./final-polish.css";
 import "./system-tools.css";
-import "./navbar-lock.css";
 import "./notifications.css";
 import "./photo-polish.css";
 import "./cosmetics.css";
 import "./professional-ui.css";
-import "./safe-area-guard.css";
 import "./depth.css";
 import "./item-context.css";
 import "./negotiations.css";
 import "./trader-identity.css";
+
+// Geometry guards intentionally finish the cascade. Keep this order stable.
+import "./navbar-lock.css";
+import "./safe-area-guard.css";
+import "./interaction-polish.css";
+import "./final-polish.css";
 
 export const metadata: Metadata = {
   title: { default: "TradeUP", template: "%s · TradeUP" },
@@ -42,5 +46,15 @@ export const viewport: Viewport = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="ru"><head><Script src="https://telegram.org/js/telegram-web-app.js?63" strategy="beforeInteractive" /></head><body><TelegramSessionProvider><TelegramSafeAreaGuard/>{children}</TelegramSessionProvider></body></html>;
+  return (
+    <html lang="ru">
+      <body>
+        <Script src="https://telegram.org/js/telegram-web-app.js?63" strategy="beforeInteractive" />
+        <TelegramSessionProvider>
+          <TelegramSafeAreaGuard />
+          {children}
+        </TelegramSessionProvider>
+      </body>
+    </html>
+  );
 }

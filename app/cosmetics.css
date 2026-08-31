@@ -1,4 +1,4 @@
-/* TradeUP Stars cosmetics. Static effects only: no motion, no gameplay advantage. */
+/* TradeUP Stars cosmetics. Animated visual effects only, never gameplay advantage. */
 .cosmeticStore { width: 100%; min-width: 0; padding: 2px 0 112px; color: #f5f5f2; }
 .cosmeticStoreHeader { min-height: 88px; padding: 12px 0 16px; display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; border-bottom: 1px solid #171717; }
 .cosmeticStoreHeader > div:first-child { min-width: 0; }
@@ -32,6 +32,7 @@
 .cosmeticPreviewButton { position: relative; width: 100%; aspect-ratio: 1.18 / 1; padding: 0; overflow: hidden; display: grid; place-items: center; border: 1px solid #181818; border-radius: 13px; background: #060606; color: #ededeb; }
 .cosmeticPreviewButton::after { content: ""; position: absolute; inset: 0; pointer-events: none; box-shadow: inset 0 1px rgba(255,255,255,.025); }
 .cosmeticRarity { position: absolute; left: 7px; bottom: 7px; padding: 3px 5px; border-radius: 5px; background: rgba(0,0,0,.72); color: #7d7d79; font-size: 7px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; backdrop-filter: blur(8px); }
+.cosmeticMotionBadge { position: absolute; right: 7px; top: 7px; padding: 3px 5px; border: 1px solid rgba(255,255,255,.07); border-radius: 5px; background: rgba(0,0,0,.66); color: #9a9a95; font-size: 6.5px; font-weight: 850; letter-spacing: .06em; text-transform: uppercase; backdrop-filter: blur(8px); }
 .rarity-rare .cosmeticRarity { color: #aebdce; }
 .rarity-epic .cosmeticRarity { color: #c3aee3; }
 .rarity-legendary .cosmeticRarity { color: #e7c261; }
@@ -53,29 +54,65 @@
 .cosmeticThemeSample span { font-size: 10px; font-weight: 850; }
 .cosmeticThemeSample small { margin-top: 2px; color: #656565; font-size: 7px; }
 
+@keyframes cosmeticFrameBreathe { 0%,100% { filter: brightness(.94) saturate(.92); } 50% { filter: brightness(1.13) saturate(1.08); } }
+@keyframes cosmeticFrameShift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+@keyframes cosmeticNameBreathe { 0%,100% { filter: brightness(.92); } 50% { filter: brightness(1.18); } }
+@keyframes cosmeticNameFlow { from { background-position: 0% 50%; } to { background-position: 200% 50%; } }
+@keyframes cosmeticTitlePulse { 0%,100% { filter: brightness(.92); } 50% { filter: brightness(1.16); } }
+@keyframes cosmeticThemeDrift { 0% { background-position: 0% 40%; filter: brightness(.92); } 50% { background-position: 100% 60%; filter: brightness(1.08); } 100% { background-position: 0% 40%; filter: brightness(.92); } }
+
+.cosmeticFrameSample[class*="frame-"], .cosmeticLiveAvatar[class*="frame-"], .compactProfileAvatar[class*="frame-"] { animation: cosmeticFrameBreathe 3.8s ease-in-out infinite; will-change: filter; }
+.cosmeticNameSample[class*="name-"], .cosmeticLiveIdentity strong[class*="name-"], .compactProfileNameLine h1[class*="name-"] { animation: cosmeticNameBreathe 3.6s ease-in-out infinite; will-change: filter, background-position; }
+.cosmeticTitleSample[class*="title-"], .equippedProfileTitle[class*="title-"], .cosmeticLiveIdentity > div > span[class*="title-"] { animation: cosmeticTitlePulse 3.4s ease-in-out infinite; will-change: filter, background-position; }
+.cosmeticThemeSample[class*="theme-"] { background-size: 180% 180% !important; animation: cosmeticThemeDrift 8s ease-in-out infinite; will-change: background-position, filter; }
+.cosmeticLivePreview[class*="theme-"]::before, .profileCosmeticTheme[class*="theme-"]::before { background-size: 180% 180% !important; animation: cosmeticThemeDrift 9s ease-in-out infinite; will-change: background-position, filter; }
+
 /* Frame cosmetics */
 .frame-amber-edge { border: 1px solid #d9ac40 !important; box-shadow: inset 0 0 0 1px #2a210e, 0 0 0 1px #080808, 0 0 0 2px #5f4918; }
 .frame-frost { border: 1px solid #b8c0c7 !important; box-shadow: inset 0 0 0 1px #31373b, 0 0 0 1px #080808, 0 0 0 2px #596067; }
-.frame-carbon { border: 1px solid #555 !important; background-image: repeating-linear-gradient(135deg,#121212 0 3px,#0a0a0a 3px 6px) !important; box-shadow: inset 0 0 0 1px #1e1e1e, 0 0 0 2px #090909; }
-.frame-aurora { border: 2px solid transparent !important; background: linear-gradient(#090909,#090909) padding-box, conic-gradient(from 215deg,#6a7de7,#61c8bc,#b06fce,#6a7de7) border-box !important; }
+.frame-carbon { border: 1px solid #555 !important; background-image: repeating-linear-gradient(135deg,#121212 0 3px,#0a0a0a 3px 6px) !important; background-size: 20px 20px !important; box-shadow: inset 0 0 0 1px #1e1e1e, 0 0 0 2px #090909; animation-name: cosmeticFrameBreathe, cosmeticFrameShift !important; animation-duration: 3.8s, 8s !important; }
+.frame-aurora { border: 2px solid transparent !important; background: linear-gradient(#090909,#090909) padding-box, linear-gradient(110deg,#5666b3,#4e9f98,#875aa0,#5666b3) border-box !important; background-size: 100% 100%, 250% 250% !important; animation-name: cosmeticFrameBreathe, cosmeticFrameShift !important; animation-duration: 3.6s, 6s !important; }
 .frame-black-label { border: 1px solid #c9a64a !important; box-shadow: inset 0 0 0 2px #050505, inset 0 0 0 3px #564416, 0 0 0 1px #080808; }
+.frame-ember { border: 2px solid transparent !important; background: linear-gradient(#080706,#080706) padding-box, linear-gradient(110deg,#3a2415,#a75d2a,#5b2c17,#d18846,#3a2415) border-box !important; background-size: 100% 100%, 260% 260% !important; animation-name: cosmeticFrameBreathe, cosmeticFrameShift !important; animation-duration: 3.4s, 6.5s !important; }
+.frame-titan { border: 1px solid #6f767b !important; box-shadow: inset 0 0 0 1px #262a2d, 0 0 0 2px #131516; background: linear-gradient(120deg,#0a0b0c 20%,#252a2d 50%,#0a0b0c 80%) !important; background-size: 220% 100% !important; animation-name: cosmeticFrameBreathe, cosmeticFrameShift !important; animation-duration: 4s, 7s !important; }
+.frame-orbit { border: 2px solid transparent !important; background: linear-gradient(#070707,#070707) padding-box, linear-gradient(90deg,#252525,#8c7440,#333,#252525) border-box !important; background-size: 100% 100%, 300% 100% !important; animation-name: cosmeticFrameBreathe, cosmeticFrameShift !important; animation-duration: 4s, 5s !important; }
+.frame-copper-pulse { border: 1px solid #98623d !important; box-shadow: inset 0 0 0 1px #38261b, 0 0 0 2px #24160f; }
+.frame-liquid-silver { border: 2px solid transparent !important; background: linear-gradient(#080808,#080808) padding-box, linear-gradient(115deg,#555,#d9dddf,#777,#f3f4f2,#555) border-box !important; background-size: 100% 100%, 260% 100% !important; animation-name: cosmeticFrameBreathe, cosmeticFrameShift !important; animation-duration: 3.5s, 5.5s !important; }
+.frame-polar-shift { border: 2px solid transparent !important; background: linear-gradient(#08090a,#08090a) padding-box, linear-gradient(120deg,#4f5d66,#708c9c,#33434d,#a4b4be,#4f5d66) border-box !important; background-size: 100% 100%, 260% 100% !important; animation-name: cosmeticFrameBreathe, cosmeticFrameShift !important; animation-duration: 4s, 7s !important; }
+.frame-comet { border: 2px solid transparent !important; background: linear-gradient(#080808,#080808) padding-box, linear-gradient(100deg,#242424 0 35%,#b89d64 48%,#eee4ca 52%,#4b4436 58%,#242424 70%) border-box !important; background-size: 100% 100%, 330% 100% !important; animation-name: cosmeticFrameBreathe, cosmeticFrameShift !important; animation-duration: 4.2s, 4.6s !important; }
+.frame-royal-circuit { border: 1px solid #9a7d38 !important; background-image: repeating-linear-gradient(90deg,rgba(188,151,68,.18) 0 2px,transparent 2px 8px) !important; background-size: 34px 100% !important; box-shadow: inset 0 0 0 2px #070604, 0 0 0 2px #2b2414; animation-name: cosmeticFrameBreathe, cosmeticFrameShift !important; animation-duration: 3.5s, 5s !important; }
+.frame-eclipse { border: 2px solid transparent !important; background: linear-gradient(#030303,#030303) padding-box, linear-gradient(115deg,#111,#222,#65707a,#191919,#080808) border-box !important; background-size: 100% 100%, 300% 100% !important; animation-name: cosmeticFrameBreathe, cosmeticFrameShift !important; animation-duration: 4.8s, 8s !important; }
+.frame-vanta-rings { border: 2px solid #181818 !important; box-shadow: inset 0 0 0 2px #020202, inset 0 0 0 3px #3a3427, 0 0 0 2px #080808, 0 0 0 3px #302a1c; }
 
 /* Name cosmetics */
 .name-signal { color: #f0c65c !important; text-shadow: 0 0 18px rgba(224,177,62,.12); }
-.name-chrome { color: transparent !important; background: linear-gradient(180deg,#fff 8%,#a9adb2 46%,#f1f1ee 82%); -webkit-background-clip: text; background-clip: text; }
-.name-prism { color: transparent !important; background: linear-gradient(90deg,#8aa0ff 0%,#82d6ca 42%,#c490e8 78%,#9aa9ff 100%); -webkit-background-clip: text; background-clip: text; }
+.name-chrome { color: transparent !important; background: linear-gradient(90deg,#8d9195 0%,#f5f5f2 35%,#9da2a6 55%,#fff 72%,#8d9195 100%); background-size: 220% 100%; -webkit-background-clip: text; background-clip: text; animation-name: cosmeticNameBreathe, cosmeticNameFlow !important; animation-duration: 3.6s, 5.8s !important; }
+.name-prism { color: transparent !important; background: linear-gradient(90deg,#7488d4 0%,#73b8b1 35%,#a976bd 70%,#7488d4 100%); background-size: 220% 100%; -webkit-background-clip: text; background-clip: text; animation-name: cosmeticNameBreathe, cosmeticNameFlow !important; animation-duration: 3.5s, 6.5s !important; }
+.name-amber-flow { color: transparent !important; background: linear-gradient(90deg,#8f692b,#f0c763,#8f692b,#d9a847); background-size: 220% 100%; -webkit-background-clip: text; background-clip: text; animation-name: cosmeticNameBreathe, cosmeticNameFlow !important; animation-duration: 3.2s, 5.4s !important; }
+.name-steel-sweep { color: transparent !important; background: linear-gradient(90deg,#777d82,#d8dcde,#7a8187,#eef0ef,#777d82); background-size: 250% 100%; -webkit-background-clip: text; background-clip: text; animation-name: cosmeticNameBreathe, cosmeticNameFlow !important; animation-duration: 3.8s, 6s !important; }
+.name-royal-fade { color: transparent !important; background: linear-gradient(90deg,#b1924b,#7e668f,#d4b568,#8b708f,#b1924b); background-size: 260% 100%; -webkit-background-clip: text; background-clip: text; animation-name: cosmeticNameBreathe, cosmeticNameFlow !important; animation-duration: 3.6s, 7s !important; }
+.name-ghostline { color: transparent !important; background: linear-gradient(90deg,#8c9398,#eff3f3,#aab1b5,#fff,#80878c); background-size: 300% 100%; -webkit-background-clip: text; background-clip: text; text-shadow: 0 0 16px rgba(211,223,227,.08); animation-name: cosmeticNameBreathe, cosmeticNameFlow !important; animation-duration: 4s, 8s !important; }
 
 /* Title cosmetics */
-.title-dealer { border-color: #3a311d; color: #dec377; }
-.title-collector { border-color: #23323b; color: #a9c6d7; }
-.title-negotiator { border-color: #323047; color: #bbb5e3; }
-.title-early { border-color: #4a3816; color: #ebc25e; box-shadow: inset 0 0 0 1px #1b160b; }
+.title-dealer { border-color: #3a311d !important; color: #dec377 !important; background: linear-gradient(90deg,#100d07,#1b1509,#100d07) !important; background-size: 220% 100% !important; }
+.title-collector { border-color: #23323b !important; color: #a9c6d7 !important; background: linear-gradient(90deg,#091015,#101a20,#091015) !important; background-size: 220% 100% !important; }
+.title-negotiator { border-color: #323047 !important; color: #bbb5e3 !important; background: linear-gradient(90deg,#0d0c14,#171524,#0d0c14) !important; background-size: 220% 100% !important; }
+.title-early { border-color: #4a3816 !important; color: #ebc25e !important; box-shadow: inset 0 0 0 1px #1b160b; background: linear-gradient(90deg,#0e0b04,#211806,#0e0b04) !important; background-size: 240% 100% !important; }
+.title-arbitrageur { border-color: #2e3d41 !important; color: #aac4c8 !important; background: linear-gradient(90deg,#081012,#122025,#081012) !important; background-size: 220% 100% !important; }
+.title-market-maker { border-color: #3b3421 !important; color: #d8c17f !important; background: linear-gradient(90deg,#0e0c07,#1d190c,#0e0c07) !important; background-size: 250% 100% !important; }
+.title-margin-hunter { border-color: #4a2f21 !important; color: #d7a37f !important; background: linear-gradient(90deg,#110a06,#26130a,#110a06) !important; background-size: 250% 100% !important; }
+.title-tycoon { border-color: #6a5120 !important; color: #f0c95d !important; box-shadow: inset 0 0 0 1px #241b08; background: linear-gradient(90deg,#090702,#251b06,#0c0903,#30230a,#090702) !important; background-size: 300% 100% !important; }
+.cosmeticTitleSample[class*="title-"], .equippedProfileTitle[class*="title-"], .cosmeticLiveIdentity > div > span[class*="title-"] { animation-name: cosmeticTitlePulse, cosmeticFrameShift !important; animation-duration: 3.4s, 7s !important; }
 
 /* Profile themes */
-.theme-obsidian::before, .cosmeticThemeSample.theme-obsidian { background: radial-gradient(circle at 18% 18%,rgba(255,255,255,.055),transparent 36%),#040404 !important; }
-.theme-graphite::before, .cosmeticThemeSample.theme-graphite { background-color: #080808 !important; background-image: linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px) !important; background-size: 14px 14px !important; }
-.theme-amber-studio::before, .cosmeticThemeSample.theme-amber-studio { background: radial-gradient(circle at 20% 25%,rgba(226,179,63,.15),transparent 43%),linear-gradient(135deg,#090704,#030303 65%) !important; }
-.theme-midnight-glass::before, .cosmeticThemeSample.theme-midnight-glass { background: radial-gradient(circle at 78% 18%,rgba(87,112,157,.14),transparent 40%),linear-gradient(145deg,#070b12,#020304 72%) !important; }
+.theme-obsidian::before, .cosmeticThemeSample.theme-obsidian { background: radial-gradient(circle at 18% 18%,rgba(255,255,255,.06),transparent 36%),radial-gradient(circle at 84% 72%,rgba(100,100,100,.04),transparent 34%),#040404 !important; }
+.theme-graphite::before, .cosmeticThemeSample.theme-graphite { background-color: #080808 !important; background-image: linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px),radial-gradient(circle at 70% 20%,rgba(255,255,255,.04),transparent 30%) !important; background-size: 18px 18px,18px 18px,180% 180% !important; }
+.theme-amber-studio::before, .cosmeticThemeSample.theme-amber-studio { background: radial-gradient(circle at 20% 25%,rgba(226,179,63,.15),transparent 43%),radial-gradient(circle at 82% 76%,rgba(116,78,28,.08),transparent 35%),linear-gradient(135deg,#090704,#030303 65%) !important; }
+.theme-midnight-glass::before, .cosmeticThemeSample.theme-midnight-glass { background: radial-gradient(circle at 78% 18%,rgba(87,112,157,.14),transparent 40%),radial-gradient(circle at 15% 80%,rgba(87,104,125,.07),transparent 34%),linear-gradient(145deg,#070b12,#020304 72%) !important; }
+.theme-copper-room::before, .cosmeticThemeSample.theme-copper-room { background: radial-gradient(circle at 22% 28%,rgba(161,91,47,.16),transparent 38%),radial-gradient(circle at 78% 72%,rgba(100,54,30,.1),transparent 34%),linear-gradient(135deg,#0b0705,#030303 68%) !important; }
+.theme-deep-ocean::before, .cosmeticThemeSample.theme-deep-ocean { background: radial-gradient(circle at 72% 18%,rgba(49,92,112,.16),transparent 42%),radial-gradient(circle at 20% 78%,rgba(42,77,91,.09),transparent 36%),linear-gradient(145deg,#04090c,#020304 72%) !important; }
+.theme-titanium::before, .cosmeticThemeSample.theme-titanium { background: linear-gradient(115deg,#050607 8%,#15191b 28%,#080a0b 48%,#1a1f21 62%,#050607 88%) !important; }
+.theme-eclipse::before, .cosmeticThemeSample.theme-eclipse { background: radial-gradient(circle at 78% 24%,rgba(126,137,143,.12),transparent 20%),radial-gradient(circle at 78% 24%,rgba(255,255,255,.025),transparent 38%),linear-gradient(145deg,#030303,#08090a 48%,#010101 76%) !important; }
 
 @media (min-width: 640px) {
   .cosmeticGrid { grid-template-columns: repeat(3,minmax(0,1fr)); gap: 28px 12px; }
@@ -85,4 +122,10 @@
   .cosmeticLivePreview > button { display: none; }
   .cosmeticLiveAvatar { width: 50px; height: 50px; border-radius: 15px; }
   .cosmeticItemCopy p { min-height: 36px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cosmeticFrameSample[class*="frame-"], .cosmeticLiveAvatar[class*="frame-"], .compactProfileAvatar[class*="frame-"],
+  .cosmeticNameSample[class*="name-"], .cosmeticLiveIdentity strong[class*="name-"], .compactProfileNameLine h1[class*="name-"],
+  .cosmeticTitleSample[class*="title-"], .equippedProfileTitle[class*="title-"], .cosmeticLiveIdentity > div > span[class*="title-"],
+  .cosmeticThemeSample[class*="theme-"], .cosmeticLivePreview[class*="theme-"]::before, .profileCosmeticTheme[class*="theme-"]::before { animation: none !important; }
 }

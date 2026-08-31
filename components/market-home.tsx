@@ -40,6 +40,7 @@ export default function MarketHome() {
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
   const loadListings = useCallback(async () => {
     const select = encodeURIComponent(CARD_COLUMNS);
@@ -51,6 +52,9 @@ export default function MarketHome() {
     let active = true;
     let reloadTimer: number | null = null;
     let disposeRealtime: (() => void) | null = null;
+
+    setLoading(true);
+    setError(null);
 
     const scheduleReload = () => {
       if (document.visibilityState !== "visible") return;
@@ -67,7 +71,6 @@ export default function MarketHome() {
     void loadListings()
       .then(async () => {
         if (!active) return;
-        setError(null);
         setLoading(false);
         try {
           const { getSupabasePublic } = await import("@/lib/supabase/public");
@@ -80,7 +83,7 @@ export default function MarketHome() {
             .subscribe();
           disposeRealtime = () => { void realtime.removeChannel(channel); };
         } catch {
-          // Realtime is an enhancement. The market remains usable via foreground refreshes.
+          // Realtime is an enhancement. Foreground refreshes keep the market usable.
         }
       })
       .catch((reason: unknown) => {
@@ -95,7 +98,7 @@ export default function MarketHome() {
       document.removeEventListener("visibilitychange", onVisibility);
       disposeRealtime?.();
     };
-  }, [loadListings]);
+  }, [loadListings, reloadKey]);
 
   const visibleListings = useMemo(() => {
     const normalized = query.trim().toLocaleLowerCase("ru");
@@ -112,18 +115,33 @@ export default function MarketHome() {
   }, [listings, query, activeCategory, sortMode]);
 
   const renderedListings = visibleListings.slice(0, visibleCount);
+  const filtersActive = query.trim().length > 0 || activeCategory !== "all";
+
+  const resetFilters = () => {
+    setQuery("");
+    setActiveCategory("all");
+    setVisibleCount(PAGE_SIZE);
+  };
 
   return (
-    <div className="marketFlat">
-      <div className="marketSearchRow">
+    <div className="marketFlat" aria-busy={loading}>
+      <div className="marketSearchRow" role="search">
         <label className="marketSearch flatSearch">
           <Icon name="search" size={19} />
-          <input value={query} onChange={(event) => { setQuery(event.target.value); setVisibleCount(PAGE_SIZE); }} placeholder="Найти товар" />
-          {query && <button type="button" onClick={() => { setQuery(""); setVisibleCount(PAGE_SIZE); }} aria-label="Очистить"><Icon name="close" size={15} /></button>}
+          <input
+            type="search"
+            value={query}
+            onChange={(event) => { setQuery(event.target.value); setVisibleCount(PAGE_SIZE); }}
+            placeholder="Найти товар"
+            aria-label="Поиск по рынку"
+            autoComplete="off"
+            spellCheck={false}
+          />
+          {query && <button type="button" onClick={() => { setQuery(""); setVisibleCount(PAGE_SIZE); }} aria-label="Очистить поиск"><Icon name="close" size={15} /></button>}
         </label>
-        <label className="flatSort" aria-label="Сортировка">
+        <label className="flatSort">
           <Icon name="filter" size={19} />
-          <select value={sortMode} onChange={(event) => { setSortMode(event.target.value as SortMode); setVisibleCount(PAGE_SIZE); }}>
+          <select aria-label="Сортировка объявлений" value={sortMode} onChange={(event) => { setSortMode(event.target.value as SortMode); setVisibleCount(PAGE_SIZE); }}>
             <option value="new">Новые</option>
             <option value="cheap">Дешевле</option>
             <option value="deal">Выгодные</option>
@@ -132,20 +150,36 @@ export default function MarketHome() {
       </div>
 
       <nav className="flatCategoryRail" aria-label="Категории">
-        <button type="button" className={activeCategory === "all" ? "flatCategory active" : "flatCategory"} onClick={() => { setActiveCategory("all"); setVisibleCount(PAGE_SIZE); }}>
+        <button type="button" aria-pressed={activeCategory === "all"} className={activeCategory === "all" ? "flatCategory active" : "flatCategory"} onClick={() => { setActiveCategory("all"); setVisibleCount(PAGE_SIZE); }}>
           <span><Icon name="grid" size={19} /></span><b>Все</b>
         </button>
         {CATEGORIES.map((category) => {
           const meta = categoryMeta[category.id] ?? { short: category.name };
-          return <button key={category.id} type="button" className={activeCategory === category.id ? "flatCategory active" : "flatCategory"} onClick={() => { setActiveCategory(category.id); setVisibleCount(PAGE_SIZE); }}><span><Icon name={categoryIconName(category.id)} size={19} /></span><b>{meta.short}</b></button>;
+          const active = activeCategory === category.id;
+          return <button key={category.id} type="button" aria-pressed={active} className={active ? "flatCategory active" : "flatCategory"} onClick={() => { setActiveCategory(category.id); setVisibleCount(PAGE_SIZE); }}><span><Icon name={categoryIconName(category.id)} size={19} /></span><b>{meta.short}</b></button>;
         })}
       </nav>
 
-      <div className="flatFeedHead"><h1>{activeCategory === "all" ? "Объявления" : CATEGORIES.find((item) => item.id === activeCategory)?.name ?? "Объявления"}</h1><span>{visibleListings.length}</span></div>
+      <div className="flatFeedHead">
+        <h1>{activeCategory === "all" ? "Объявления" : CATEGORIES.find((item) => item.id === activeCategory)?.name ?? "Объявления"}</h1>
+        <span aria-live="polite">{loading ? "…" : visibleListings.length}</span>
+      </div>
 
-      {loading && <div className="listingGridProduct flatGrid">{Array.from({ length: 6 }).map((_, index) => <div className="listingSkeleton flatSkeleton" key={index} />)}</div>}
-      {!loading && error && <div className="flatEmpty"><Icon name="info" size={30} /><strong>Не удалось загрузить</strong><span>{error}</span></div>}
-      {!loading && !error && visibleListings.length === 0 && <div className="flatEmpty"><Icon name="search" size={30} /><strong>{listings.length === 0 ? "Объявлений пока нет" : "Ничего не найдено"}</strong><span>{listings.length === 0 ? "Первый лот появится здесь." : "Измени запрос или категорию."}</span></div>}
+      {loading && <div className="listingGridProduct flatGrid" aria-hidden="true">{Array.from({ length: 6 }).map((_, index) => <div className="listingSkeleton flatSkeleton" key={index} />)}</div>}
+      {!loading && error && (
+        <div className="flatEmpty" role="alert">
+          <Icon name="info" size={30} /><strong>Не удалось загрузить</strong><span>{error}</span>
+          <button type="button" className="inlineAction" onClick={() => setReloadKey((value) => value + 1)}>Повторить</button>
+        </div>
+      )}
+      {!loading && !error && visibleListings.length === 0 && (
+        <div className="flatEmpty">
+          <Icon name="search" size={30} />
+          <strong>{listings.length === 0 ? "Объявлений пока нет" : "Ничего не найдено"}</strong>
+          <span>{listings.length === 0 ? "Первый лот появится здесь." : "Измени запрос или категорию."}</span>
+          {filtersActive && <button type="button" className="inlineAction" onClick={resetFilters}>Сбросить фильтры</button>}
+        </div>
+      )}
       {!loading && !error && renderedListings.length > 0 && <>
         <div className="listingGridProduct flatGrid">{renderedListings.map((listing, index) => <ListingCard listing={listing} eager={index < 2} key={listing.id} />)}</div>
         {renderedListings.length < visibleListings.length && <button type="button" className="marketLoadMore" onClick={() => setVisibleCount((count) => count + PAGE_SIZE)}>Показать ещё</button>}

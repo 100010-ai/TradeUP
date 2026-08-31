@@ -41,6 +41,8 @@ type TelegramWebApp = {
   isVersionAtLeast?(version: string): boolean;
   requestFullscreen?(): void;
   exitFullscreen?(): void;
+  openTelegramLink?(url: string): void;
+  openLink?(url: string, options?: { try_instant_view?: boolean }): void;
   openInvoice?(url: string, callback?: (status: TelegramInvoiceStatus) => void): void;
   setHeaderColor?(color: string): void;
   setBackgroundColor?(color: string): void;
