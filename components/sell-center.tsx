@@ -46,7 +46,7 @@ export default function SellCenter() {
 
   const activeByItem = useMemo(() => new Map(liveListings.map((listing) => [listing.inventory_item_id, listing])), [liveListings]);
   const available = useMemo(() => inventory.filter((item) => !activeByItem.has(item.id) && !item.is_locked), [inventory, activeByItem]);
-  const unavailableCount = inventory.length - liveListings.length - available.length;
+  const unavailableCount = useMemo(() => inventory.filter((item) => !activeByItem.has(item.id) && item.is_locked).length, [inventory, activeByItem]);
 
   async function cancel(listingId: string) {
     setActionId(listingId);
