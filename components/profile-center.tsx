@@ -1,5 +1,8 @@
 "use client";
 
+/* Telegram profile photos are arbitrary remote URLs. */
+/* eslint-disable @next/next/no-img-element */
+
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import Icon from "@/components/icon";
@@ -15,6 +18,12 @@ function rankBounds(rating: number) {
   if (rating < 1800) return { previous: 1500, next: 1800 };
   if (rating < 2000) return { previous: 1800, next: 2000 };
   return { previous: 2000, next: 2000 };
+}
+
+function ProfilePhoto({ src, initial }: { src?: string | null; initial: string }) {
+  const [failed, setFailed] = useState(false);
+  useEffect(() => setFailed(false), [src]);
+  return src && !failed ? <img src={src} alt="" decoding="async" onError={() => setFailed(true)}/> : <>{initial}</>;
 }
 
 export default function ProfileCenter() {
@@ -62,11 +71,12 @@ export default function ProfileCenter() {
   const themeStyle = styleFor(catalog, equipped.profile_theme_id);
   const title = titleFor(catalog, equipped.title_id);
   const profit = Number(profile.total_profit);
+  const initial = profile.first_name.trim().charAt(0).toUpperCase() || "T";
 
   return (
     <div className={`compactProfile ${themeStyle ? `profileCosmeticTheme ${themeStyle}` : ""}`}>
       <section className="compactProfileTop" aria-label="Профиль игрока">
-        <div className={`compactProfileAvatar ${frameStyle}`} aria-hidden="true">{profile.photo_url ? <img src={profile.photo_url} alt=""/> : profile.first_name.charAt(0).toUpperCase()}</div>
+        <div className={`compactProfileAvatar ${frameStyle}`} aria-hidden="true"><ProfilePhoto src={profile.photo_url} initial={initial}/></div>
         <div className="compactProfileIdentity">
           <div className="compactProfileNameLine"><h1 className={nameStyle}>{profile.first_name}</h1>{title ? <span className="equippedProfileTitle">{title}</span> : <span className="profileLevel">{level}</span>}</div>
           <span className="compactProfileHandle">{profile.username ? `@${profile.username}` : "Профиль TradeUP"}</span>
