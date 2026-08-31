@@ -25,6 +25,10 @@ function relativeTime(value: string) {
 export default function NotificationLayer({ open, onClose }: { open: boolean; onClose: () => void }) {
   const router = useRouter();
   const session = useTelegramSession();
+  const sessionState = session.state;
+  const callNotificationAction = session.callNotificationAction;
+  const latestNotification = session.latestNotification;
+  const unreadNotifications = session.unreadNotifications;
   const [items, setItems] = useState<PhoneNotification[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState(false);
@@ -35,18 +39,18 @@ export default function NotificationLayer({ open, onClose }: { open: boolean; on
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
 
   const load = useCallback(async () => {
-    if (session.state !== "verified") return;
+    if (sessionState !== "verified") return;
     setLoading(true);
     setLoadError(false);
     try {
-      const result = await session.callNotificationAction("list");
+      const result = await callNotificationAction("list");
       setItems(Array.isArray(result.notifications) ? result.notifications as PhoneNotification[] : []);
     } catch {
       setLoadError(true);
     } finally {
       setLoading(false);
     }
-  }, [session.state, session.callNotificationAction]);
+  }, [sessionState, callNotificationAction]);
 
   useEffect(() => {
     if (open) void load();
@@ -73,7 +77,7 @@ export default function NotificationLayer({ open, onClose }: { open: boolean; on
   }, [open, onClose]);
 
   useEffect(() => {
-    const latest = session.latestNotification;
+    const latest = latestNotification;
     if (!latest) return;
     const createdAt = new Date(latest.created_at).getTime();
 
@@ -92,7 +96,7 @@ export default function NotificationLayer({ open, onClose }: { open: boolean; on
     try { window.Telegram?.WebApp?.HapticFeedback?.notificationOccurred?.("success"); } catch { /* optional */ }
     if (toastTimer.current !== null) window.clearTimeout(toastTimer.current);
     toastTimer.current = window.setTimeout(() => setToast(null), 5_500);
-  }, [session.latestNotification]);
+  }, [latestNotification]);
 
   useEffect(() => () => {
     if (toastTimer.current !== null) window.clearTimeout(toastTimer.current);
@@ -100,7 +104,7 @@ export default function NotificationLayer({ open, onClose }: { open: boolean; on
 
   async function openNotification(item: PhoneNotification) {
     if (!item.read_at) {
-      void session.callNotificationAction("mark_read", { notificationId: item.id });
+      void callNotificationAction("mark_read", { notificationId: item.id });
       setItems((current) => current.map((entry) => entry.id === item.id ? { ...entry, read_at: new Date().toISOString() } : entry));
     }
     setToast(null);
@@ -109,7 +113,7 @@ export default function NotificationLayer({ open, onClose }: { open: boolean; on
   }
 
   async function markAll() {
-    await session.callNotificationAction("mark_all").catch(() => undefined);
+    await callNotificationAction("mark_all").catch(() => undefined);
     const now = new Date().toISOString();
     setItems((current) => current.map((item) => ({ ...item, read_at: item.read_at ?? now })));
   }
@@ -127,7 +131,7 @@ export default function NotificationLayer({ open, onClose }: { open: boolean; on
         <header className="notificationCenterHeader">
           <button ref={closeButtonRef} type="button" onClick={onClose} aria-label="Закрыть уведомления"><Icon name="arrowLeft" size={22}/></button>
           <strong id="tradeup-notification-title">Уведомления</strong>
-          <button type="button" className="notificationReadAll" disabled={session.unreadNotifications === 0 || loading} onClick={() => void markAll()}>Прочитать все</button>
+          <button type="button" className="notificationReadAll" disabled={unreadNotifications === 0 || loading} onClick={() => void markAll()}>Прочитать все</button>
         </header>
         <div className="notificationCenterBody" aria-live="polite">
           {loading && <div className="notificationLoading" aria-label="Загрузка уведомлений"><i/><i/><i/></div>}
