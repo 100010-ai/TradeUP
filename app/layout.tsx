@@ -25,6 +25,7 @@ import "./trader-identity.css";
 // Geometry guards intentionally finish the cascade. Keep this order stable.
 import "./navbar-lock.css";
 import "./safe-area-guard.css";
+import "./interaction-polish.css";
 import "./final-polish.css";
 
 export const metadata: Metadata = {
