@@ -31,7 +31,10 @@ export default function SystemChatThread({ channel }: { channel: "tradeup" | "su
     if (sessionState !== "verified") { if (!silent) setLoading(false); return; }
     if (loadInFlight.current) return;
     loadInFlight.current = true;
-    if (!silent) setLoading(true);
+    if (!silent) {
+      setLoading(true);
+      setError(null);
+    }
     try {
       const result = await callChatAction("open_system_chat", { channel }) as OpenSystemResult;
       if (channel === "tradeup") {
@@ -53,8 +56,9 @@ export default function SystemChatThread({ channel }: { channel: "tradeup" | "su
         });
       }
       setError(null);
-    } catch { setError("Не удалось открыть чат"); }
-    finally {
+    } catch {
+      if (!silent) setError("Не удалось открыть чат");
+    } finally {
       loadInFlight.current = false;
       if (!silent) setLoading(false);
     }
@@ -76,7 +80,8 @@ export default function SystemChatThread({ channel }: { channel: "tradeup" | "su
 
   async function chooseTopic(topicId: string) {
     if (busy) return;
-    setBusy(true); setError(null);
+    setBusy(true);
+    setError(null);
     try { await callChatAction("support_choose_topic", { topicId }); await load(true); }
     catch (reason) { setError(reason instanceof Error && reason.message === "support_already_requested" ? "Оператор уже вызван" : "Не удалось выбрать тему"); }
     finally { setBusy(false); }
@@ -84,7 +89,8 @@ export default function SystemChatThread({ channel }: { channel: "tradeup" | "su
 
   async function callHuman() {
     if (busy) return;
-    setBusy(true); setError(null);
+    setBusy(true);
+    setError(null);
     try { await callChatAction("support_request_human"); await load(true); }
     catch { setError("Не удалось вызвать поддержку"); }
     finally { setBusy(false); }
@@ -94,29 +100,36 @@ export default function SystemChatThread({ channel }: { channel: "tradeup" | "su
     event.preventDefault();
     const body = text.trim();
     if (!body || busy) return;
-    setBusy(true); setText(""); setError(null);
+    setBusy(true);
+    setText("");
+    setError(null);
     try { await callChatAction("support_send_message", { body }); await load(true); }
     catch { setText(body); setError("Сообщение не отправлено"); }
     finally { setBusy(false); }
   }
 
-  if (sessionState !== "verified" && !loading) return <div className="systemChatScreen"><header className="chatFlowHeader"><Link href="/messages"><Icon name="arrowLeft"/></Link><strong>{channel === "tradeup" ? "TradeUP" : "Поддержка"}</strong></header><div className="flatAuth"><strong>Открой TradeUP в Telegram</strong><button onClick={openBot}>Открыть</button></div></div>;
+  if (sessionState !== "verified" && !loading) return <div className="systemChatScreen"><header className="chatFlowHeader"><Link href="/messages" aria-label="Назад к чатам"><Icon name="arrowLeft"/></Link><strong>{channel === "tradeup" ? "TradeUP" : "Поддержка"}</strong></header><div className="flatAuth"><strong>Открой TradeUP в Telegram</strong><button type="button" onClick={openBot}>Открыть</button></div></div>;
 
   const supportStatus = ticket?.status ?? "bot";
   const statusText = supportStatus === "active" ? "Поддержка подключилась" : supportStatus === "waiting" ? "Ожидаем оператора" : supportStatus === "closed" ? "Диалог завершён" : "Автопомощь";
+  const hasLoadedContent = channel === "tradeup" ? announcements.length > 0 : messages.length > 0 || topics.length > 0 || ticket !== null;
+
+  if (!loading && error && !hasLoadedContent) {
+    return <div className="systemChatScreen"><header className="chatFlowHeader systemChatHeader"><Link href="/messages" aria-label="Назад к чатам"><Icon name="arrowLeft"/></Link><div className="systemChatIdentity"><span className={channel === "tradeup" ? "systemChatLogo tradeup" : "systemChatLogo support"}><Icon name={channel === "tradeup" ? "bot" : "message"} size={20}/></span><span><strong>{channel === "tradeup" ? "TradeUP" : "Поддержка TradeUP"}</strong><small>не загрузилось</small></span></div></header><div className="routeStatePage" role="alert"><Icon name="info" size={30}/><h1>Чат временно недоступен</h1><p>Проверь соединение и повтори загрузку.</p><div className="routeStateActions"><button type="button" className="inlineAction primary" onClick={() => void load()}>Повторить</button><Link className="inlineAction" href="/messages">К чатам</Link></div></div></div>;
+  }
 
   return <div className="systemChatScreen">
     <header className="chatFlowHeader systemChatHeader">
-      <Link href="/messages" aria-label="Назад"><Icon name="arrowLeft"/></Link>
+      <Link href="/messages" aria-label="Назад к чатам"><Icon name="arrowLeft"/></Link>
       <div className="systemChatIdentity"><span className={channel === "tradeup" ? "systemChatLogo tradeup" : "systemChatLogo support"}><Icon name={channel === "tradeup" ? "bot" : "message"} size={20}/></span><span><strong>{channel === "tradeup" ? "TradeUP" : "Поддержка TradeUP"}</strong><small>{channel === "tradeup" ? "Официальный чат" : statusText}</small></span></div>
     </header>
 
-    {loading && <div className="chatLoading"/>}
-    {error && <div className="chatError">{error}</div>}
+    {loading && <div className="chatLoading" aria-label="Загрузка чата"/>}
+    {error && hasLoadedContent && <div className="chatError" role="status">{error}</div>}
 
     {!loading && channel === "tradeup" && <div className="chatMessages systemBroadcastFeed">
-      {announcements.map((message, index) => <div className="broadcastMessage" key={message.id}><div className="broadcastMeta"><strong>TradeUP</strong><time>{day(message.published_at)} · {time(message.published_at)}</time></div><p>{message.body}</p>{index === announcements.length - 1 && <span className="broadcastOfficial"><Icon name="check" size={13}/>Официальное сообщение</span>}</div>)}
-      {announcements.length === 0 && <div className="chatStart"><strong>Здесь будут новости TradeUP</strong></div>}
+      {announcements.map((message, index) => <div className="broadcastMessage" key={message.id}><div className="broadcastMeta"><strong>TradeUP</strong><time dateTime={message.published_at}>{day(message.published_at)} · {time(message.published_at)}</time></div><p>{message.body}</p>{index === announcements.length - 1 && <span className="broadcastOfficial"><Icon name="check" size={13}/>Официальное сообщение</span>}</div>)}
+      {announcements.length === 0 && <div className="chatStart"><strong>Здесь будут новости TradeUP</strong><span>Обновления рынка и важные события появятся в этом чате.</span></div>}
       <div ref={endRef}/>
     </div>}
 
@@ -127,14 +140,14 @@ export default function SystemChatThread({ channel }: { channel: "tradeup" | "su
           const own = message.sender_type === "user";
           const system = message.sender_type === "system";
           if (system) return <div className="supportSystemStatus" key={message.id}>{message.body}</div>;
-          return <div className={own ? "chatBubbleRow own" : "chatBubbleRow"} key={message.id}><div className={own ? "chatBubble own" : "chatBubble supportAgentBubble"}><span>{message.body}</span><time>{time(message.created_at)}</time></div></div>;
+          return <div className={own ? "chatBubbleRow own" : "chatBubbleRow"} key={message.id}><div className={own ? "chatBubble own" : "chatBubble supportAgentBubble"}><span>{message.body}</span><time dateTime={message.created_at}>{time(message.created_at)}</time></div></div>;
         })}
         {(supportStatus === "bot" || supportStatus === "closed") && <div className="supportTopicPicker"><strong>{messages.length ? "Ещё один вопрос" : "Выбери тему"}</strong>{topics.map((topic) => <button type="button" key={topic.id} disabled={busy} onClick={() => void chooseTopic(topic.id)}><span>{topic.title}</span><Icon name="chevronRight" size={16}/></button>)}</div>}
         {supportStatus === "bot" && messages.length > 0 && <button type="button" className="callSupportButton" onClick={() => void callHuman()} disabled={busy}><Icon name="message" size={18}/>Позвать поддержку</button>}
-        {supportStatus === "waiting" && <div className="supportWaiting"><i/><span>Оператор получит уведомление. Можешь дописать детали ниже.</span></div>}
+        {supportStatus === "waiting" && <div className="supportWaiting" role="status"><i/><span>Оператор получит уведомление. Можешь дописать детали ниже.</span></div>}
         <div ref={endRef}/>
       </div>
-      {["waiting", "active"].includes(supportStatus) && <form className="chatComposer supportComposer" onSubmit={send}><textarea value={text} onChange={(event) => setText(event.target.value.slice(0, 2000))} placeholder="Сообщение" rows={1}/><button type="submit" disabled={!text.trim() || busy}><Icon name="send" size={20}/></button></form>}
+      {["waiting", "active"].includes(supportStatus) && <form className="chatComposer supportComposer" onSubmit={send}><textarea value={text} onChange={(event) => setText(event.target.value.slice(0, 2000))} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); event.currentTarget.form?.requestSubmit(); } }} placeholder="Сообщение" aria-label="Сообщение поддержке" maxLength={2000} rows={1}/><button type="submit" aria-label="Отправить сообщение" disabled={!text.trim() || busy}><Icon name="send" size={20}/></button></form>}
     </>}
   </div>;
 }
