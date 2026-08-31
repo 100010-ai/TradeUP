@@ -93,6 +93,7 @@ export default function CosmeticsStore() {
   }
   const frameStyle = styleFor(catalog, effective.frame_id);
   const nameStyle = styleFor(catalog, effective.name_style_id);
+  const titleStyle = styleFor(catalog, effective.title_id);
   const themeStyle = styleFor(catalog, effective.profile_theme_id);
   const equippedTitle = titleFor(catalog, effective.title_id);
 
@@ -180,13 +181,13 @@ export default function CosmeticsStore() {
 
   return <div className="cosmeticStore" aria-busy={loading}>
     <header className="cosmeticStoreHeader">
-      <div><span>TradeUP Style</span><h1>Оформление</h1><p>Только косметика. Никаких бонусов к экономике.</p></div>
+      <div><span>TradeUP Style</span><h1>Оформление</h1><p>Всё платное оформление анимировано. Только визуал, никаких бонусов к экономике.</p></div>
       <div className="starsOnlyBadge"><Icon name="star" size={15}/><span>Только Stars</span></div>
     </header>
 
     <section className={`cosmeticLivePreview ${themeStyle}`}>
       <div className={`cosmeticLiveAvatar ${frameStyle}`}><PreviewAvatar src={profile?.photo_url} name={profile?.first_name}/></div>
-      <div className="cosmeticLiveIdentity"><div><strong className={nameStyle}>{profile?.first_name ?? "TradeUP"}</strong>{equippedTitle && <span>{equippedTitle}</span>}</div><small>{profile?.username ? `@${profile.username}` : "Твой профиль"}</small></div>
+      <div className="cosmeticLiveIdentity"><div><strong className={nameStyle}>{profile?.first_name ?? "TradeUP"}</strong>{equippedTitle && <span className={titleStyle}>{equippedTitle}</span>}</div><small>{profile?.username ? `@${profile.username}` : "Твой профиль"}</small></div>
       <button type="button" onClick={() => setPreview(null)} disabled={!preview}>Сбросить пример</button>
     </section>
 
@@ -201,7 +202,7 @@ export default function CosmeticsStore() {
     {!loading && snapshot && visible.length > 0 && <div className="cosmeticGrid">{visible.map((item) => {
       const has = owned.has(item.id), active = isEquipped(item), busy = busyId === item.id;
       return <article className={`cosmeticItem rarity-${item.rarity}`} key={item.id}>
-        <button type="button" className="cosmeticPreviewButton" onClick={() => setPreview(item)} aria-label={`Предпросмотр ${item.name}`}><CosmeticVisual item={item}/><span className="cosmeticRarity">{rarityLabel(item.rarity)}</span></button>
+        <button type="button" className="cosmeticPreviewButton" onClick={() => setPreview(item)} aria-label={`Предпросмотр ${item.name}`}><CosmeticVisual item={item}/><span className="cosmeticRarity">{rarityLabel(item.rarity)}</span><span className="cosmeticMotionBadge">Анимация</span></button>
         <div className="cosmeticItemCopy"><div><strong>{item.name}</strong><small>{kindLabel(item.kind)}</small></div><p>{item.description}</p></div>
         {has ? <button type="button" className={active ? "cosmeticAction equipped" : "cosmeticAction"} onClick={() => void equip(item)} disabled={Boolean(busyId)}>{busy ? "…" : active ? <><Icon name="check" size={15}/>Надето</> : "Надеть"}</button> : <button type="button" className="cosmeticAction buy" onClick={() => void buy(item)} disabled={Boolean(busyId)}>{busy ? "Открываем…" : <><Icon name="star" size={15}/>{item.stars_price}</>}</button>}
       </article>;
