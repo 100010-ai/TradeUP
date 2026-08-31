@@ -60,7 +60,7 @@ export default function SellNewCenter({ itemId }: { itemId: string | null }) {
     setTitle(type?.name ?? "");
     setPrice(String(Math.max(1, estimateFairValue(type?.base_value ?? 0, selected.condition))));
     setDescription("");
-  }, [selected?.id]);
+  }, [selected]);
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
