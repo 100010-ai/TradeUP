@@ -1,5 +1,8 @@
 "use client";
 
+/* Seller photos come from arbitrary Telegram CDN hosts. */
+/* eslint-disable @next/next/no-img-element */
+
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -19,6 +22,13 @@ function Sparkline({ points }: { points: number[] }) {
   const range = Math.max(1, max - min);
   const coords = points.map((value, index) => `${points.length === 1 ? 50 : (index / (points.length - 1)) * 100},${32 - ((value - min) / range) * 28}`).join(" ");
   return <svg className="sparkline" viewBox="0 0 100 36" preserveAspectRatio="none" role="img" aria-label={`История рынка, от ${rubles(min)} до ${rubles(max)}`}><polyline points={coords} fill="none" stroke="currentColor" strokeWidth="2.5" vectorEffect="non-scaling-stroke" /></svg>;
+}
+
+function SellerAvatar({ src, name }: { src?: string | null; name: string }) {
+  const [failed, setFailed] = useState(false);
+  useEffect(() => setFailed(false), [src]);
+  if (!src || failed) return <>{name.charAt(0).toUpperCase()}</>;
+  return <img src={src} alt="" loading="lazy" decoding="async" onError={() => setFailed(true)}/>;
 }
 
 export default function ListingDetail({ id }: { id: string }) {
@@ -70,19 +80,22 @@ export default function ListingDetail({ id }: { id: string }) {
   const sessionState = session.state;
   const viewerId = session.profile?.id;
   const callAction = session.callAction;
+  const viewedListingId = listing?.id;
+  const viewedSellerId = listing?.seller_id;
 
   useEffect(() => {
-    if (sessionState !== "verified" || !listing || viewerId === listing.seller_id) return;
+    if (sessionState !== "verified" || !viewedListingId || viewerId === viewedSellerId) return;
     let active = true;
-    void callAction("view_listing", { listingId: listing.id }).then((result) => {
+    void callAction("view_listing", { listingId: viewedListingId }).then((result) => {
       if (!active || result.counted !== true) return;
-      setListing((current) => current && current.id === listing.id ? { ...current, views: current.views + 1 } : current);
+      setListing((current) => current && current.id === viewedListingId ? { ...current, views: current.views + 1 } : current);
     }).catch(() => undefined);
     return () => { active = false; };
-  }, [listing?.id, listing?.seller_id, sessionState, viewerId, callAction]);
+  }, [viewedListingId, viewedSellerId, sessionState, viewerId, callAction]);
 
   async function toggleFavorite() {
     if (session.state !== "verified") return session.openBot();
+    if (actionLoading) return;
     setActionLoading(true);
     setMessage(null);
     try { await session.callAction("toggle_favorite", { listingId: id }); }
@@ -92,6 +105,7 @@ export default function ListingDetail({ id }: { id: string }) {
 
   async function openChat() {
     if (session.state !== "verified") return session.openBot();
+    if (actionLoading) return;
     setActionLoading(true);
     setMessage(null);
     try {
@@ -105,6 +119,7 @@ export default function ListingDetail({ id }: { id: string }) {
 
   async function buy() {
     if (session.state !== "verified") return session.openBot();
+    if (actionLoading) return;
     setActionLoading(true);
     setMessage(null);
     try {
@@ -119,7 +134,7 @@ export default function ListingDetail({ id }: { id: string }) {
 
   async function createOffer(event: React.FormEvent) {
     event.preventDefault();
-    if (!listing) return;
+    if (!listing || actionLoading) return;
     if (session.state !== "verified") return session.openBot();
     const amount = Number(offerAmount);
     const asking = Number(listing.price);
@@ -140,6 +155,7 @@ export default function ListingDetail({ id }: { id: string }) {
   }
 
   async function cancel() {
+    if (actionLoading) return;
     setActionLoading(true);
     setMessage(null);
     try {
@@ -177,7 +193,7 @@ export default function ListingDetail({ id }: { id: string }) {
   const maxOffer = Math.max(minOffer, Math.floor(asking - 1));
   const offerValue = Number(offerAmount);
   const offerValid = Number.isFinite(offerValue) && offerValue >= minOffer && offerValue <= maxOffer;
-
+  const setQuickOffer = (value: number) => setOfferAmount(String(Math.min(maxOffer, Math.max(minOffer, Math.round(asking * value / 100)))));
   const activateSeller = () => {
     if (!isOwner && !actionLoading) void openChat();
   };
@@ -198,7 +214,7 @@ export default function ListingDetail({ id }: { id: string }) {
         <h1>{listing.title}</h1>
         <div className="flatSubline">{[listing.brand, conditionLabel(listing.condition), relativeDate(listing.created_at)].filter(Boolean).join(" · ")}</div>
 
-        {message && <div className="flatNotice" role="status">{message}</div>}
+        {message && <div className="flatNotice" role="status" aria-live="polite">{message}</div>}
 
         {!isOwner && (
           <div className="flatPrimaryActions">
@@ -222,7 +238,7 @@ export default function ListingDetail({ id }: { id: string }) {
               <div className="flatMoneyInput"><input id="offer-price" value={offerAmount} onChange={(event) => setOfferAmount(event.target.value.replace(/[^0-9]/g, ""))} inputMode="numeric" autoFocus aria-describedby="offer-range"/><b>₽</b></div>
               <small id="offer-range" className="flatMuted">От {rubles(minOffer)} до {rubles(maxOffer)}</small>
             </div>
-            <div className="flatQuickPrices">{[85,90,95].map((value) => <button type="button" key={value} onClick={() => setOfferAmount(String(Math.round(asking * value / 100)))}>{value}%</button>)}</div>
+            <div className="flatQuickPrices">{[85, 90, 95].map((value) => <button type="button" key={value} onClick={() => setQuickOffer(value)}>{value}%</button>)}</div>
             <button className="flatSubmit" type="submit" disabled={!offerValid || actionLoading}>{actionLoading ? "Отправляем…" : "Отправить"}</button>
           </form>
         )}
@@ -240,7 +256,7 @@ export default function ListingDetail({ id }: { id: string }) {
         tabIndex={!isOwner ? 0 : undefined}
         aria-label={!isOwner ? `Написать продавцу ${listing.seller_first_name}` : undefined}
       >
-        <div className="flatSellerAvatar">{listing.seller_photo_url ? <img src={listing.seller_photo_url} alt=""/> : listing.seller_first_name.charAt(0).toUpperCase()}</div>
+        <div className="flatSellerAvatar"><SellerAvatar src={listing.seller_photo_url} name={listing.seller_first_name}/></div>
         <div><strong>{listing.seller_first_name}</strong><span>{listing.seller_username ? `@${listing.seller_username} · ` : ""}{sellerLevel(listing.seller_rating)} · {listing.seller_deals_count} сделок</span></div>
         <div className="flatSellerRating"><Icon name="star" size={15}/>{listing.seller_rating}</div>
         {!isOwner && <Icon name="chevronRight" size={18}/>} 
