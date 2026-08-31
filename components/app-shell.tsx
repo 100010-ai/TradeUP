@@ -1,6 +1,9 @@
 "use client";
 
-import { useCallback, useState } from "react";
+/* Telegram profile photos can come from arbitrary remote hosts. */
+/* eslint-disable @next/next/no-img-element */
+
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Icon, { type IconName } from "@/components/icon";
@@ -22,6 +25,13 @@ function compactBadge(value: number) {
   return value > 9 ? "9+" : String(Math.max(0, value));
 }
 
+function ProfileAvatar({ src, initial }: { src?: string | null; initial: string }) {
+  const [failed, setFailed] = useState(false);
+  useEffect(() => setFailed(false), [src]);
+  if (!src || failed) return <span>{initial}</span>;
+  return <img src={src} alt="" decoding="async" onError={() => setFailed(true)} />;
+}
+
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const session = useTelegramSession();
@@ -30,6 +40,14 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const initial = session.user?.first_name?.trim().charAt(0).toUpperCase() || "T";
   const flowMode = pathname.startsWith("/messages/") || pathname.startsWith("/sell/new");
   const balanceLabel = session.profile ? rubles(session.profile.balance) : "";
+
+  useEffect(() => setNotificationsOpen(false), [pathname]);
+
+  const sessionMessage = session.state === "browser"
+    ? "Покупки и чаты доступны внутри Telegram"
+    : session.state === "unavailable" || session.state === "error"
+      ? "Telegram-сессия временно недоступна"
+      : "Покупки и чаты доступны в Telegram";
 
   return (
     <div className={`appRoot ${flowMode ? "flowMode" : ""}`}>
@@ -64,7 +82,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               </button>
             )}
             <Link prefetch={false} href="/profile" className="avatarButton" aria-label="Открыть профиль">
-              {session.profile?.photo_url ? <img src={session.profile.photo_url} alt="" decoding="async" /> : <span>{initial}</span>}
+              <ProfileAvatar src={session.profile?.photo_url} initial={initial} />
             </Link>
           </div>
         </header>
@@ -72,7 +90,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
       {session.state !== "verified" && session.state !== "checking" && !flowMode && (
         <div className="sessionStrip" role="status">
-          <span>Покупки и чаты доступны в Telegram</span>
+          <span>{sessionMessage}</span>
           <button type="button" onClick={session.openBot}>Открыть</button>
         </div>
       )}
