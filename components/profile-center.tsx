@@ -68,6 +68,7 @@ export default function ProfileCenter() {
   const progress = maxRank ? 100 : Math.min(100, Math.max(0, ((profile.rating - bounds.previous) / Math.max(1, bounds.next - bounds.previous)) * 100));
   const frameStyle = styleFor(catalog, equipped.frame_id);
   const nameStyle = styleFor(catalog, equipped.name_style_id);
+  const titleStyle = styleFor(catalog, equipped.title_id);
   const themeStyle = styleFor(catalog, equipped.profile_theme_id);
   const title = titleFor(catalog, equipped.title_id);
   const profit = Number(profile.total_profit);
@@ -78,7 +79,7 @@ export default function ProfileCenter() {
       <section className="compactProfileTop" aria-label="Профиль игрока">
         <div className={`compactProfileAvatar ${frameStyle}`} aria-hidden="true"><ProfilePhoto src={profile.photo_url} initial={initial}/></div>
         <div className="compactProfileIdentity">
-          <div className="compactProfileNameLine"><h1 className={nameStyle}>{profile.first_name}</h1>{title ? <span className="equippedProfileTitle">{title}</span> : <span className="profileLevel">{level}</span>}</div>
+          <div className="compactProfileNameLine"><h1 className={nameStyle}>{profile.first_name}</h1>{title ? <span className={`equippedProfileTitle ${titleStyle}`}>{title}</span> : <span className="profileLevel">{level}</span>}</div>
           <span className="compactProfileHandle">{profile.username ? `@${profile.username}` : "Профиль TradeUP"}</span>
         </div>
         <div className="compactProfileBalance"><span>Баланс</span><strong>{rubles(profile.balance)}</strong></div>
