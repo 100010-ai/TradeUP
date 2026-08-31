@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Icon from "@/components/icon";
 import { useTelegramSession } from "@/components/telegram-session";
 import { rubles } from "@/lib/product";
@@ -18,14 +18,34 @@ function responseTime(v:number|string|null|undefined){const s=Number(v);if(!Numb
 function date(v:string){return new Date(v).toLocaleDateString("ru-RU",{day:"numeric",month:"short",year:"numeric"});}
 
 export default function ListingMarketContext({listingId}:{listingId:string}){
- const session=useTelegramSession();const[data,setData]=useState<Result|null>(null);const[loading,setLoading]=useState(false);
- useEffect(()=>{if(session.state!=="verified")return;let active=true;setLoading(true);void session.callDepthAction("listing_context",{listingId}).then(r=>{if(active)setData(r as Result);}).catch(()=>undefined).finally(()=>{if(active)setLoading(false);});return()=>{active=false;};},[listingId,session.state,session.callDepthAction]);
- const people=useMemo(()=>new Map((data?.eventProfiles??[]).map(p=>[p.id,p])),[data]);if(session.state!=="verified")return null;if(loading&&!data)return <div className="instanceSkeleton"/>;if(!data?.item)return null;
+ const session=useTelegramSession();
+ const sessionState=session.state;
+ const callDepthAction=session.callDepthAction;
+ const[data,setData]=useState<Result|null>(null);
+ const[loading,setLoading]=useState(false);
+ const[error,setError]=useState(false);
+ const[reloadKey,setReloadKey]=useState(0);
+
+ const load=useCallback(async()=>{
+  if(sessionState!=="verified")return;
+  setLoading(true);setError(false);
+  try{const result=await callDepthAction("listing_context",{listingId});setData(result as Result);}
+  catch{setError(true);}
+  finally{setLoading(false);}
+ },[sessionState,callDepthAction,listingId]);
+
+ useEffect(()=>{let active=true;if(sessionState!=="verified")return;setLoading(true);setError(false);void callDepthAction("listing_context",{listingId}).then(r=>{if(active)setData(r as Result);}).catch(()=>{if(active)setError(true);}).finally(()=>{if(active)setLoading(false);});return()=>{active=false;};},[listingId,sessionState,callDepthAction,reloadKey]);
+ const people=useMemo(()=>new Map((data?.eventProfiles??[]).map(p=>[p.id,p])),[data]);
+ if(sessionState!=="verified")return null;
+ if(loading&&!data)return <div className="instanceSkeleton" aria-label="Загрузка истории товара"/>;
+ if(error&&!data)return <section className="flatSection"><div className="flatEmpty"><Icon name="info" size={26}/><strong>Детали рынка не загрузились</strong><span>Основное объявление всё ещё доступно.</span><button type="button" className="inlineAction" onClick={()=>setReloadKey(x=>x+1)}>Повторить</button></div></section>;
+ if(!data?.item)return null;
  const item=data.item,type=one(item.item_types),specs=item.specs??{},market=data.market,reputation=data.reputation;const trend=market?.median_7d&&market?.median_prev_7d?((Number(market.median_7d)-Number(market.median_prev_7d))/Number(market.median_prev_7d))*100:null;
  const specRows=[
   ["Серийный код",item.serial_code],["Цвет",typeof specs.color==="string"?specs.color:null],["Память",Number(specs.storage_gb)>0?`${specs.storage_gb} GB`:null],["Аккумулятор",Number(specs.battery_health)>0?`${specs.battery_health}%`:null],["Коробка",yes(specs.box)],["Комплект",yes(specs.accessories)],["Размер",Number(specs.size_eu)>0?`EU ${specs.size_eu}`:null],["Полный комплект",yes(specs.complete_set)],
  ].filter((x):x is [string,string]=>typeof x[1]==="string"&&Boolean(x[1]));
  return <>
+  {error&&<div className="flatNotice" role="status">Часть рыночных данных не обновилась. Показана последняя загруженная версия. <button type="button" onClick={()=>void load()}>Обновить</button></div>}
   <section className="flatSection instanceSection"><div className="instanceHeading"><div><span>Конкретный экземпляр</span><h2>{type?.name??"Предмет"}</h2></div><b>{item.owner_count} владелец{item.owner_count===1?"":item.owner_count<5?"а":"ев"}</b></div><div className="instanceSpecs">{specRows.map(([k,v])=><div key={k}><span>{k}</span><strong>{v}</strong></div>)}</div>{item.condition_notes.length>0&&<div className="conditionNotes">{item.condition_notes.map(n=><span key={n}><Icon name="check" size={12}/>{n}</span>)}</div>}</section>
   <section className="flatSection marketReality"><div className="instanceHeading"><div><span>Реальные сделки</span><h2>Рынок этого товара</h2></div>{trend!==null&&<b className={trend>=0?"up":"down"}>{trend>=0?"+":""}{trend.toFixed(1)}%</b>}</div><div className="marketRealityGrid"><div><span>Медиана 7 дней</span><strong>{market?.median_7d?rubles(market.median_7d):"Нет данных"}</strong></div><div><span>Продаж за 30 дней</span><strong>{market?.sales_30d??0}</strong></div><div><span>Активных на рынке</span><strong>{market?.active_listings??0}</strong></div><div><span>Обычно продаётся</span><strong>{responseTime(market?.avg_sell_seconds)}</strong></div></div>{market?.low_30d&&market?.high_30d&&<p>За 30 дней похожие экземпляры уходили от <b>{rubles(market.low_30d)}</b> до <b>{rubles(market.high_30d)}</b>. В обращении сейчас {market.circulating} экземпляров.</p>}</section>
   <section className="flatSection sellerTrust"><div className="instanceHeading"><div><span>Репутация</span><h2>Продавец</h2></div>{reputation?.reputation_percent!=null&&<b>{Number(reputation.reputation_percent).toFixed(1)}%</b>}</div><div className="sellerTrustRows"><div><span>Положительные сделки</span><strong>{reputation?.positive_count??0}</strong></div><div><span>Проблемные</span><strong>{reputation?.negative_count??0}</strong></div><div><span>Средний ответ</span><strong>{responseTime(reputation?.avg_response_seconds)}</strong></div><div><span>Добавили в избранное</span><strong>{data.favorites??0}</strong></div></div></section>
