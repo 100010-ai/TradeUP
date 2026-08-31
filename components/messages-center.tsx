@@ -1,5 +1,8 @@
 "use client";
 
+/* Telegram profile photos are arbitrary remote URLs. */
+/* eslint-disable @next/next/no-img-element */
+
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Icon from "@/components/icon";
@@ -13,6 +16,12 @@ type InventoryJoin = { item_types: ItemType | ItemType[] | null };
 type ChatListing = { id: string; title: string; price: number | string; status: string; seller_id: string; inventory_items: InventoryJoin | InventoryJoin[] | null };
 type SystemChat = { id: "tradeup" | "support"; kind: string; title: string; subtitle: string; preview: string; updatedAt: string; unread: boolean; status: string };
 type ThreadsResult = { profileId?: string; threads?: Thread[]; profiles?: ChatProfile[]; listings?: ChatListing[]; systemChats?: SystemChat[] };
+
+function PersonAvatar({ src, initial }: { src?: string | null; initial: string }) {
+  const [failed, setFailed] = useState(false);
+  useEffect(() => setFailed(false), [src]);
+  return src && !failed ? <img src={src} alt="" loading="lazy" decoding="async" onError={() => setFailed(true)}/> : <span>{initial}</span>;
+}
 
 export default function MessagesCenter() {
   const { state: sessionState, callChatAction, openBot } = useTelegramSession();
@@ -125,7 +134,7 @@ export default function MessagesCenter() {
           const unread = Boolean(thread.last_message_at && thread.last_sender_id !== profileId && (!readAt || new Date(thread.last_message_at).getTime() > new Date(readAt).getTime()));
           const initial = other?.first_name?.trim().charAt(0).toUpperCase() || "T";
           return <Link prefetch={false} href={`/messages/${thread.id}`} className={unread ? "messageRow unread" : "messageRow"} key={thread.id}>
-            <div className="messagePersonAvatar">{other?.photo_url ? <img src={other.photo_url} alt="" loading="lazy" decoding="async"/> : <span>{initial}</span>}{other?.is_online && <i aria-label="Онлайн" />}</div>
+            <div className="messagePersonAvatar"><PersonAvatar src={other?.photo_url} initial={initial}/>{other?.is_online && <i aria-label="Онлайн" />}</div>
             <div className="messageMain">
               <div className="messageNameLine"><strong>{other?.first_name ?? "Пользователь"}</strong><time dateTime={thread.last_message_at || undefined}>{thread.last_message_at ? relativeDate(thread.last_message_at) : ""}</time></div>
               <div className="messagePreview">{thread.last_message_preview || "Начните переписку"}</div>
